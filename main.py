@@ -35,13 +35,20 @@ def main() -> None:
     logger.debug(f"Working directory: {os.getcwd()}")
     
     try:
-        # Change to granite-test-generator directory for proper path resolution
-        granite_dir = Path(__file__).parent / "granite-test-generator"
+        # Determine granite-test-generator directory for proper path resolution
+        project_root_override = os.getenv("GRANITE_PROJECT_ROOT")
+        if project_root_override:
+            granite_dir = Path(project_root_override).expanduser()
+        else:
+            granite_dir = Path(__file__).parent / "granite-test-generator"
+
+        granite_dir = granite_dir.resolve()
+        logger.debug("Resolved granite project directory to %s", granite_dir)
         if not granite_dir.exists():
             raise RuntimeError(f"Granite test generator directory not found: {granite_dir}")
-        
+
         os.chdir(granite_dir)
-        logger.info(f"Changed working directory to: {granite_dir}")
+        logger.info("Changed working directory to: %s", granite_dir)
         
         # Import and run the main system
         from src.main import main as granite_main

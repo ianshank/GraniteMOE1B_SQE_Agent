@@ -40,17 +40,15 @@ class TestRootMainEntryPoint:
             import main
             
             # Mock Path to simulate missing directory
-            with patch('main.Path') as mock_path:
-                mock_granite_dir = MagicMock()
-                mock_granite_dir.exists.return_value = False
-                mock_granite_dir.__str__ = lambda: "/nonexistent/granite-test-generator"
-                
-                mock_path_instance = MagicMock()
-                mock_path_instance.parent = MagicMock()
-                mock_path_instance.parent.__truediv__ = lambda self, other: mock_granite_dir
-                mock_path.return_value = mock_path_instance
-                
-                # Should raise RuntimeError for missing directory
+            with patch.dict(
+                os.environ,
+                {
+                    "GRANITE_LOCAL_ONLY": "true",
+                    "GRANITE_PROJECT_ROOT": "/nonexistent/granite-test-generator",
+                },
+                clear=False,
+            ):
+
                 with pytest.raises(RuntimeError, match="Granite test generator directory not found"):
                     main.main()
         finally:
@@ -66,11 +64,16 @@ class TestRootMainEntryPoint:
             import main
             
             # Mock os.chdir and import to simulate import failure
-            with patch('main.os.chdir'), \
-                 patch('main.asyncio.run') as mock_run:
-                
-                # Simulate import error
-                mock_run.side_effect = ImportError("Module not found")
+            with patch.dict(os.environ, {"GRANITE_LOCAL_ONLY": "true"}, clear=False), \
+                 patch('main.os.chdir'), \
+                 patch('asyncio.run') as mock_run:
+
+                def _raise_module_not_found(coro):
+                    if hasattr(coro, 'close'):
+                        coro.close()
+                    raise ImportError("Module not found")
+
+                mock_run.side_effect = _raise_module_not_found
                 
                 with pytest.raises(ImportError, match="Module not found"):
                     main.main()
@@ -104,8 +107,15 @@ class TestGraniteMainEntryPoint:
             import main as granite_main
             
             # Mock the asyncio.run to simulate import failure
-            with patch('main.asyncio.run') as mock_run:
-                mock_run.side_effect = ImportError("src.main not found")
+            with patch.dict(os.environ, {"GRANITE_LOCAL_ONLY": "true"}, clear=False), \
+                 patch('asyncio.run') as mock_run:
+
+                def _raise_src_main_not_found(coro):
+                    if hasattr(coro, 'close'):
+                        coro.close()
+                    raise ImportError("src.main not found")
+
+                mock_run.side_effect = _raise_src_main_not_found
                 
                 with pytest.raises(ImportError, match="src.main not found"):
                     granite_main.main()
@@ -129,10 +139,16 @@ class TestMainEntryPointIntegration:
             expected_granite_dir = root_path / "granite-test-generator"
             
             # Mock the granite_main to avoid full execution
-            with patch('main.asyncio.run') as mock_run, \
+            with patch.dict(
+                os.environ,
+                {
+                    "GRANITE_LOCAL_ONLY": "true",
+                    "GRANITE_PROJECT_ROOT": str(expected_granite_dir),
+                },
+                clear=False,
+            ), \
+                 patch('asyncio.run', new=lambda coro: coro.close() if hasattr(coro, 'close') else None), \
                  patch('main.os.chdir') as mock_chdir:
-                
-                mock_run.return_value = None  # Simulate successful execution
                 
                 # Should not raise exception
                 main.main()
@@ -153,15 +169,24 @@ class TestMainEntryPointIntegration:
             import main
             
             # Mock logging configuration
-            with patch('main.logging.basicConfig') as mock_logging, \
-                 patch('main.asyncio.run'):
-                
+            with patch.dict(
+                os.environ,
+                {
+                    "GRANITE_LOCAL_ONLY": "true",
+                    "GRANITE_PROJECT_ROOT": str((root_path / "granite-test-generator")),
+                },
+                clear=False,
+            ), \
+                 patch('logging.basicConfig') as mock_logging, \
+                 patch('asyncio.run', new=lambda coro: coro.close() if hasattr(coro, 'close') else None):
+
                 main.main()
-                
+
                 # Verify logging was configured
                 mock_logging.assert_called_once()
                 call_kwargs = mock_logging.call_args[1]
-                assert call_kwargs['level'] == main.logging.INFO
+                import logging as py_logging
+                assert call_kwargs['level'] == py_logging.INFO
                 assert 'format' in call_kwargs
         
         finally:

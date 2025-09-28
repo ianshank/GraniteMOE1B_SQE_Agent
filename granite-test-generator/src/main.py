@@ -52,18 +52,38 @@ class GraniteTestCaseGenerator:
         # Otherwise, load from file
         import yaml
         try:
-            with open(config_path, 'r') as f:
+            with open(config_path, 'r', encoding='utf-8') as f:
                 config = yaml.safe_load(f)
-                logger.debug(f"Loaded configuration from {config_path}")
+                logger.debug("Loaded configuration from %s", config_path)
                 return config or {}
         except FileNotFoundError:
             logger.warning(f"Configuration file not found: {config_path}")
             return {}
 
     def _local_only_mode_enabled(self) -> bool:
-        """Return True when local-only connector mode is requested via environment."""
-        flag = os.getenv("GRANITE_LOCAL_ONLY", "")
-        return flag.strip().lower() in {"1", "true", "yes", "on"}
+        """Return True when local-only connector mode is requested via environment.
+
+        Accepts common truthy/falsey string values. Raises ValueError when an
+        explicit but unrecognised value is provided to surface configuration mistakes.
+        """
+        flag = os.getenv("GRANITE_LOCAL_ONLY")
+        if flag is None or flag.strip() == "":
+            return False
+
+        normalized = flag.strip().lower()
+        truthy = {"1", "true", "yes", "on"}
+        falsy = {"0", "false", "no", "off"}
+
+        if normalized in truthy:
+            return True
+        if normalized in falsy:
+            return False
+
+        valid_values = sorted(truthy | falsy)
+        raise ValueError(
+            "Invalid value for GRANITE_LOCAL_ONLY: "
+            f"{flag!r}. Expected one of {valid_values} or unset."
+        )
     
     def _load_integration_config_with_precedence(self, base_teams: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Load integration config with proper precedence handling.
@@ -319,15 +339,22 @@ class GraniteTestCaseGenerator:
             # Index in RAG system if RAG is enabled
             if self.config.get('rag', {}).get('enabled', True) and requirements_docs:
                 from src.utils.chunking import DocumentChunk
-                chunks = [DocumentChunk(content=content, metadata=metadata, 
-                                      chunk_id=f"req_{i}", source_type='requirements',
-                                      team_context=metadata.get('team', 'default'))
-                         for i, (content, metadata) in enumerate(requirements_docs)]
+
+                chunks = [
+                    DocumentChunk(
+                        content=content,
+                        metadata=metadata,
+                        chunk_id=f"req_{i}",
+                        source_type='requirements',
+                        team_context=metadata.get('team', 'default'),
+                    )
+                    for i, (content, metadata) in enumerate(requirements_docs)
+                ]
                 self.components['rag_retriever'].index_documents(chunks)
-                logger.info(f"Indexed {len(chunks)} document chunks in RAG system")
+                logger.info("Indexed %d document chunks in RAG system", len(chunks))
         else:
             logger.warning(f"Requirements directory not found: {requirements_path}")
-
+            
         # Persist whether we have any local requirements data for later decisions
         self.components['has_requirements'] = bool(requirements_docs)
         
@@ -341,13 +368,20 @@ class GraniteTestCaseGenerator:
             # Index user stories in RAG system if RAG is enabled
             if user_stories and self.config.get('rag', {}).get('enabled', True):
                 from src.utils.chunking import DocumentChunk
-                chunks = [DocumentChunk(content=content, metadata=metadata, 
-                                      chunk_id=f"story_{i}", source_type='user_story',
-                                      team_context=metadata.get('team', 'default'))
-                         for i, (content, metadata) in enumerate(user_stories)]
+
+                chunks = [
+                    DocumentChunk(
+                        content=content,
+                        metadata=metadata,
+                        chunk_id=f"story_{i}",
+                        source_type='user_story',
+                        team_context=metadata.get('team', 'default'),
+                    )
+                    for i, (content, metadata) in enumerate(user_stories)
+                ]
                 
                 self.components['rag_retriever'].index_documents(chunks)
-                logger.info(f"Indexed {len(chunks)} user story chunks in RAG system")
+                logger.info("Indexed %d user story chunks in RAG system", len(chunks))
         else:
             logger.debug(f"User stories file not found: {user_stories_file}")
         
@@ -442,7 +476,7 @@ class GraniteTestCaseGenerator:
             except Exception as e:
                 logger.error(f"Unexpected error registering team: {e}")
                 continue
-        
+
         # Check if any teams were registered
         if registered_count == 0:
             logger.error("No valid teams were registered. Cannot proceed.")
@@ -472,33 +506,41 @@ class GraniteTestCaseGenerator:
             except Exception as e:
                 logger.warning(f"Team registration failed or none configured: {e}")
         results = await orchestrator.process_all_teams()
-        
-        # DIAGNOSTIC: Log the exact results structure for debugging
-        logger.info(f"DIAGNOSTIC: process_all_teams() returned {len(results)} teams")
+
+        logger.debug("process_all_teams returned %d teams", len(results))
         for team_name, test_cases in results.items():
-            logger.info(f"DIAGNOSTIC: Team '{team_name}' has {len(test_cases)} test cases of type {type(test_cases)}")
+            logger.debug(
+                "Team '%s' produced %d test cases (type=%s)",
+                team_name,
+                len(test_cases),
+                type(test_cases).__name__,
+            )
             if test_cases:
-                logger.info(f"DIAGNOSTIC: First test case type: {type(test_cases[0])}, has model_dump: {hasattr(test_cases[0], 'model_dump')}")
-        
+                logger.debug(
+                    "First test case type=%s supports model_dump=%s",
+                    type(test_cases[0]).__name__,
+                    hasattr(test_cases[0], 'model_dump'),
+                )
+
         # Get output directory from config or use default
         output_dir_path = self.config.get('paths', {}).get('output_dir', "output")
         output_dir = Path(output_dir_path)
         output_dir.mkdir(parents=True, exist_ok=True)
-        logger.info(f"DIAGNOSTIC: Writing to output directory: {output_dir.absolute()}")
-        
+        logger.debug("Writing generated results to %s", output_dir.absolute())
+
         total_generated = 0
         files_written = 0
-        
+
         for team_name, test_cases in results.items():
             total_generated += len(test_cases)
-            
+
             # Save test cases as JSON with enhanced error handling and logging
             output_file = output_dir / f"{team_name}_test_cases.json"
-            
+
             try:
-                logger.info(f"DIAGNOSTIC: Writing {len(test_cases)} test cases to {output_file}")
-                
-                with open(output_file, 'w') as f:
+                logger.debug("Writing %d test cases to %s", len(test_cases), output_file)
+
+                with open(output_file, 'w', encoding='utf-8') as f:
                     test_cases_dict = []
                     for i, tc in enumerate(test_cases):
                         try:
@@ -507,27 +549,39 @@ class GraniteTestCaseGenerator:
                             elif hasattr(tc, 'dict'):
                                 tc_dict = tc.dict()
                             else:
-                                logger.error(f"DIAGNOSTIC: Test case {i} has no serialization method: {type(tc)}")
+                                logger.error(
+                                    "Test case %d (type=%s) is not serializable; coercing to string",
+                                    i,
+                                    type(tc).__name__,
+                                )
                                 tc_dict = str(tc)
                             test_cases_dict.append(tc_dict)
                         except Exception as e:
-                            logger.error(f"DIAGNOSTIC: Failed to serialize test case {i}: {e}")
+                            logger.warning(
+                                "Failed to serialize test case %d (type=%s): %s",
+                                i,
+                                type(tc).__name__,
+                                e,
+                            )
                             continue
-                    
+
                     json.dump(test_cases_dict, f, indent=2, default=str)
-                    logger.info(f"DIAGNOSTIC: Successfully wrote {len(test_cases_dict)} test cases to {output_file}")
-                
+                    logger.debug(
+                        "Successfully wrote %d serialized test cases to %s",
+                        len(test_cases_dict),
+                        output_file,
+                    )
+
                 files_written += 1
-                
-            except Exception as e:
-                logger.error(f"DIAGNOSTIC: Failed to write test cases to {output_file}: {e}")
-                logger.error(f"DIAGNOSTIC: Exception type: {type(e)}, args: {e.args}")
+
+            except Exception:
+                logger.exception("Failed to write test cases to %s", output_file)
                 continue
-            
+
             logger.info(f"Generated {len(test_cases)} test cases for team: {team_name}")
             print(f"Generated {len(test_cases)} test cases for team: {team_name}")
-        
-        logger.info(f"DIAGNOSTIC: Successfully wrote {files_written} team files out of {len(results)} teams")
+
+        logger.debug("Successfully wrote %d/%d team files", files_written, len(results))
         
         # Generate quality report
         quality_report = self.components['orchestrator'].generate_quality_report()

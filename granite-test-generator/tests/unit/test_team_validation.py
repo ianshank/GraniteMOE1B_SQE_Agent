@@ -204,6 +204,7 @@ class TestTeamValidationIntegration:
             mock_orchestrator.return_value = mock_orchestrator_instance
             
             generator = GraniteTestCaseGenerator(config_dict=config)
+            generator.components['orchestrator'] = mock_orchestrator_instance
             
             # Should register only the valid team
             registered_count = generator.register_teams()
