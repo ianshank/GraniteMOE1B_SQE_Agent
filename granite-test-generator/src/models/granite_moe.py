@@ -5,6 +5,9 @@ This module avoids hard failures when optional heavy dependencies
 clear error paths and placeholders that raise informative messages if used.
 """
 
+# Import constants
+from src.utils.constants import DEFAULT_MODELS_DIR, DEFAULT_EPOCHS, DEFAULT_BATCH_SIZE
+
 # Optional heavy deps lazy import with informative placeholders
 try:  # pragma: no cover - exercised transitively in CI
     from transformers import (
@@ -182,8 +185,8 @@ Create a test case for the above requirements.
 
         return prompt
     
-    def fine_tune(self, dataset: Dataset, output_dir: str = "./fine_tuned_granite",
-                  num_epochs: int = 3, batch_size: int = 4):
+    def fine_tune(self, dataset: Dataset, output_dir: str = DEFAULT_MODELS_DIR,
+                  num_epochs: int = DEFAULT_EPOCHS, batch_size: int = DEFAULT_BATCH_SIZE):
         """Fine-tune the model with QLoRA for memory efficiency"""
         from peft import LoraConfig, get_peft_model, TaskType
         
@@ -243,7 +246,7 @@ Create a test case for the above requirements.
         
         return trainer
 
-    def prepare_offline_fine_tuning(self, dataset: Dataset, output_dir: str = "./fine_tuned_granite") -> tuple[str, str]:
+    def prepare_offline_fine_tuning(self, dataset: Dataset, output_dir: str = DEFAULT_MODELS_DIR) -> tuple[str, str]:
         """Prepare artifacts for offline fine-tuning on another machine.
 
         Saves the HF Dataset to disk and writes a LoRA configuration JSON file

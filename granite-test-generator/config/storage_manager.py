@@ -1,7 +1,11 @@
+from pathlib import Path
+from typing import Dict
+from src.utils.constants import DEFAULT_DATA_DIR
+
 class StorageManager:
     """Intelligent storage management for Mac Mini deployment"""
     
-    def __init__(self, base_path: str = "./granite_workspace"):
+    def __init__(self, base_path: str = f"./{DEFAULT_DATA_DIR}_workspace"):
         self.base_path = Path(base_path)
         self.storage_limits = {
             'model_cache': 3.0,      # GB
