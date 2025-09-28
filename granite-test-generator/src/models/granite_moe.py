@@ -1,14 +1,22 @@
-from transformers import (
-    AutoModelForCausalLM, 
-    AutoTokenizer, 
-    TrainingArguments,
-    Trainer,
-    DataCollatorForLanguageModeling
-)
-from datasets import Dataset
+# Optional heavy deps lazy import
+try:
+    from transformers import (
+        AutoModelForCausalLM,
+        AutoTokenizer,
+        TrainingArguments,
+        Trainer,
+        DataCollatorForLanguageModeling,
+    )
+    from datasets import Dataset
+    _TRANSFORMERS_AVAILABLE = True
+except Exception:  # pragma: no cover
+    _TRANSFORMERS_AVAILABLE = False
+    AutoModelForCausalLM = AutoTokenizer = TrainingArguments = Trainer = DataCollatorForLanguageModeling = None
+    Dataset = object
 import torch
 from typing import List, Dict, Any, TYPE_CHECKING
 import json
+import logging
 import mlx.core as mx
 import mlx.nn as nn
 from mlx_lm import load, generate
@@ -53,8 +61,13 @@ class GraniteMoETrainer:
     
     def load_model_for_inference(self):
         """Load optimized model for inference using MLX"""
-        self.mlx_model, self.mlx_tokenizer = load(self.model_name)
-        return self.mlx_model
+        try:
+            self.mlx_model, self.mlx_tokenizer = load(self.model_name)
+            return self.mlx_model
+        except Exception:
+            # Fallback: leave model unloaded; caller should handle template-based generation
+            self.mlx_model, self.mlx_tokenizer = None, None
+            return None
     
     def prepare_training_data(self, test_cases: List['TestCase'], 
                             requirements_context: List[str]) -> Dataset:
@@ -163,3 +176,63 @@ Create a test case for the above requirements.
         trainer.save_model()
         
         return trainer
+
+    def prepare_offline_fine_tuning(self, dataset: Dataset, output_dir: str = "./fine_tuned_granite") -> tuple[str, str]:
+        """Prepare artifacts for offline fine-tuning on another machine.
+
+        Saves the HF Dataset to disk and writes a LoRA configuration JSON file
+        compatible with PEFT-based training.
+
+        Args:
+            dataset: Hugging Face Dataset to be used for fine-tuning.
+            output_dir: Base directory where artifacts will be written.
+
+        Returns:
+            Tuple containing (tokenized_dataset_path, lora_config_path).
+        """
+        import os
+        from pathlib import Path
+        from peft import LoraConfig, TaskType
+
+        logger = logging.getLogger(__name__)
+
+        base_dir = Path(output_dir)
+        tokenized_dir = base_dir / "tokenized_dataset"
+        config_path = base_dir / "lora_config.json"
+
+        # Ensure directories exist
+        base_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Preparing offline fine-tuning artifacts in {base_dir}")
+
+        # Save dataset
+        try:
+            dataset.save_to_disk(str(tokenized_dir))
+            logger.info(f"Saved dataset to {tokenized_dir}")
+        except Exception as e:
+            logger.error(f"Failed to save dataset to disk: {e}")
+            raise
+
+        # Build LoRA configuration
+        try:
+            lora_config = LoraConfig(
+                task_type=TaskType.CAUSAL_LM,
+                inference_mode=False,
+                r=16,
+                lora_alpha=32,
+                lora_dropout=0.1,
+                target_modules=["experts", "gate", "q_proj", "v_proj"],
+            )
+        except Exception as e:
+            logger.error(f"Failed to construct LoRA config: {e}")
+            raise
+
+        # Persist LoRA config
+        try:
+            with open(config_path, "w", encoding="utf-8") as f:
+                json.dump(lora_config.to_dict(), f, indent=2)
+            logger.info(f"Wrote LoRA config to {config_path}")
+        except Exception as e:
+            logger.error(f"Failed to write LoRA config JSON: {e}")
+            raise
+
+        return str(tokenized_dir), str(config_path)
