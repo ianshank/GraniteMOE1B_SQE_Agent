@@ -8,7 +8,7 @@ project:
 agents:
   test_generation_agent:
     enabled: true
-    module: src/agents/test_generation_agent.py
+    module: src/agents/generation_agent.py
     config:
       model_type: "moe"
       max_cases_per_run: 50
@@ -71,4 +71,3 @@ paths:
   data_dir: ./data/
   artifacts_dir: ./artifacts/
   scripts_dir: ./scripts/
-

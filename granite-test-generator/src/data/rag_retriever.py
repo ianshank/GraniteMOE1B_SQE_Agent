@@ -283,17 +283,15 @@ class RAGRetriever:
                 else:
                     docs = self.ensemble_retriever.invoke(enhanced_query)  # type: ignore[attr-defined]
             except Exception as e:  # pragma: no cover - environment-specific LC issues
-                logger.error(f"Primary retriever failed (`{type(self.ensemble_retriever).__name__}`): {e}. Falling back to SimpleKeywordRetriever.")
-                fallback = SimpleKeywordRetriever.from_texts(self._raw_documents, metadatas=self._raw_metadatas)
-                docs = fallback.get_relevant_documents(enhanced_query)
+                logger.error(f"Primary retriever failed (`{type(self.ensemble_retriever).__name__}`): {e}. Falling back to keyword scoring.")
+                docs = self._keyword_fallback(enhanced_query)
         elif self.bm25_retriever:
             # Direct retrieval when no ensemble
             try:
                 docs = self.bm25_retriever.get_relevant_documents(enhanced_query)
             except Exception as e:  # pragma: no cover
-                logger.error(f"BM25 retrieval failed: {e}. Falling back to SimpleKeywordRetriever.")
-                fallback = SimpleKeywordRetriever.from_texts(self._raw_documents, metadatas=self._raw_metadatas)
-                docs = fallback.get_relevant_documents(enhanced_query)
+                logger.error(f"BM25 retrieval failed: {e}. Falling back to keyword scoring.")
+                docs = self._keyword_fallback(enhanced_query)
         else:
             logger.warning("No documents indexed or retrievers initialized. Returning empty context.")
             return []
@@ -314,3 +312,20 @@ class RAGRetriever:
         
         logger.debug(f"Retrieved {len(filtered_docs)} documents for query: '{query}' (team: {team_context})")
         return filtered_docs
+
+    # --------------------- Internal keyword fallback ---------------------
+    def _keyword_fallback(self, enhanced_query: str):
+        """Compute naive keyword-match scores over raw docs, independent of retriever classes.
+
+        This avoids monkeypatching collisions in tests that replace retriever methods
+        at the class level (e.g., BM25 or SimpleKeywordRetriever).
+        """
+        tokens = [t for t in (enhanced_query or '').lower().split() if t]
+        results: List[_FallbackDocument] = []
+        for content, meta in zip(getattr(self, '_raw_documents', []), getattr(self, '_raw_metadatas', [])):
+            lc = (content or '').lower()
+            score = float(sum(lc.count(tok) for tok in tokens))
+            results.append(_FallbackDocument(page_content=content, metadata=meta, score=score))
+        # Sort and return top-k similar to other retrievers
+        results.sort(key=lambda d: d.score, reverse=True)
+        return results

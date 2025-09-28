@@ -74,7 +74,7 @@ granite-test-generator/
 │   │   ├── cag_cache.py   # CAG cache system
 │   │   └── data_processors.py # Data transformation
 │   ├── agents/            # AI agents
-│   │   └── test_generation_agent.py # Test generation logic
+│   │   └── generation_agent.py # Test generation logic + suite helpers
 │   ├── integration/       # External integrations
 │   │   ├── team_connectors.py # Jira/GitHub connectors
 │   │   └── workflow_orchestrator.py # Multi-team orchestration
@@ -139,7 +139,7 @@ python run_tests.py --coverage
 
 ```python
 from src.models.granite_moe import GraniteMoETrainer
-from src.agents.test_generation_agent import TestGenerationAgent
+from src.agents.generation_agent import TestGenerationAgent
 from src.data.rag_retriever import RAGRetriever
 from src.data.cag_cache import CAGCache
 from src.utils.kv_cache import KVCache
@@ -153,6 +153,22 @@ agent = TestGenerationAgent(trainer, rag, cache)
 # Generate test cases
 requirements = ["User should be able to login with valid credentials"]
 test_cases = await agent.generate_test_cases_for_team("backend", requirements)
+```
+
+### Generate a Named Test Suite (Regression/E2E)
+
+```python
+from src.agents.generation_agent import TestGenerationAgent
+
+# Given an initialized agent and a list of requirements
+suite = await agent.generate_test_suite_for_team(
+    team_name="backend",
+    requirements=["# Login\nUser can login", "# Logout\nUser can logout"],
+    suite_name="Regression Suite",
+    description="Core regressions for auth"
+)
+print(suite.name)          # "Regression Suite"
+print(len(suite.test_cases))  # equals number of requirements
 ```
 
 ### Use with Jira Integration
@@ -193,10 +209,16 @@ pytest tests/ -v
 # Run with coverage
 pytest tests/ --cov=src --cov-report=term-missing
 
-# Run specific test categories
+# Run specific directories
 pytest tests/unit/ -v
 pytest tests/contract/ -v
 pytest tests/integration/ -v
+
+# Use markers (registered in pytest.ini)
+pytest -m "regression" -v
+pytest -m "e2e" -v
+pytest -m "integration" -v
+pytest -m "contract" -v
 
 # Run tests for specific module
 pytest tests/unit/test_workflow_orchestrator.py -v

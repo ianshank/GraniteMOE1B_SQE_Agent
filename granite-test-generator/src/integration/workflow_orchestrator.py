@@ -1,14 +1,14 @@
 import asyncio
 import time
-from typing import Dict, List, Any, TYPE_CHECKING
+from typing import Dict, List, Any, TYPE_CHECKING, Optional, Union, Type
 from dataclasses import dataclass
 import logging
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from src.integration.team_connectors import TeamConnector
-    from src.agents.test_generation_agent import TestGenerationAgent
+    from src.integration.team_connectors import TeamConnector, JiraConnector, GitHubConnector, LocalFileSystemConnector
+    from src.agents.generation_agent import TestGenerationAgent
     from src.models.test_case_schemas import TestCase
 
 @dataclass
@@ -27,6 +27,122 @@ class WorkflowOrchestrator:
         self.team_configs: Dict[str, TeamConfiguration] = {}
         self.results_cache: Dict[str, List['TestCase']] = {}
         logger.info("WorkflowOrchestrator initialized.")
+        
+    @staticmethod
+    def create_connector(connector_config: Dict[str, Any]) -> 'TeamConnector':
+        """Create a connector instance based on configuration.
+        
+        Factory method to create the appropriate connector based on the connector type.
+        Validates that all required fields are present for the specified connector type.
+        
+        Args:
+            connector_config: Dictionary containing connector configuration
+            
+        Returns:
+            An instance of the appropriate TeamConnector subclass
+            
+        Raises:
+            ValueError: If connector_config is invalid or missing required fields
+            ImportError: If the required connector class cannot be imported
+            Exception: For other errors during connector creation
+        """
+        # Import connector classes here to avoid circular imports
+        from src.integration.team_connectors import JiraConnector, GitHubConnector, LocalFileSystemConnector
+        
+        # Validate basic configuration
+        if not connector_config:
+            raise ValueError("Connector configuration is empty")
+            
+        if 'type' not in connector_config:
+            raise ValueError("Connector configuration missing required field: type")
+            
+        connector_type = connector_config['type'].lower()
+        
+        # Create connector based on type
+        if connector_type == 'jira':
+            # Validate Jira connector config
+            required_fields = ['base_url', 'username', 'api_token', 'project_key']
+            for field in required_fields:
+                if field not in connector_config:
+                    raise ValueError(f"Jira connector missing required field: {field}")
+                    
+            return JiraConnector(
+                base_url=connector_config['base_url'],
+                username=connector_config['username'],
+                api_token=connector_config['api_token'],
+                project_key=connector_config['project_key']
+            )
+            
+        elif connector_type == 'github':
+            # Validate GitHub connector config
+            required_fields = ['repo_owner', 'repo_name', 'token']
+            for field in required_fields:
+                if field not in connector_config:
+                    raise ValueError(f"GitHub connector missing required field: {field}")
+                    
+            return GitHubConnector(
+                repo_owner=connector_config['repo_owner'],
+                repo_name=connector_config['repo_name'],
+                token=connector_config['token']
+            )
+            
+        elif connector_type == 'local':
+            # Validate LocalFileSystem connector config
+            if 'input_directory' not in connector_config:
+                raise ValueError("LocalFileSystem connector missing required field: input_directory")
+                
+            # Get parameters with defaults
+            input_directory = connector_config['input_directory']
+            team_name = connector_config.get('team_name', 'default')
+            output_directory = connector_config.get('output_directory', None)
+            file_types = connector_config.get('file_types', None)
+            
+            return LocalFileSystemConnector(
+                input_directory=input_directory,
+                team_name=team_name,
+                output_directory=output_directory,
+                file_types=file_types
+            )
+            
+        else:
+            raise ValueError(f"Unknown connector type: {connector_type}")
+    
+    def create_team_configuration(self, team_config: Dict[str, Any]) -> TeamConfiguration:
+        """Create a TeamConfiguration instance from a configuration dictionary.
+        
+        Args:
+            team_config: Dictionary containing team configuration
+            
+        Returns:
+            TeamConfiguration instance
+            
+        Raises:
+            ValueError: If team_config is invalid or missing required fields
+            Exception: For other errors during team configuration creation
+        """
+        # Validate team config
+        if 'name' not in team_config:
+            raise ValueError("Team configuration missing required field: name")
+            
+        if 'connector' not in team_config:
+            raise ValueError(f"Team {team_config['name']} missing connector configuration")
+            
+        # Create connector
+        connector_config = team_config['connector']
+        # Add team name to connector config for LocalFileSystemConnector
+        if connector_config.get('type', '').lower() == 'local' and 'team_name' not in connector_config:
+            connector_config['team_name'] = team_config['name']
+            
+        connector = self.create_connector(connector_config)
+        
+        # Create team configuration
+        return TeamConfiguration(
+            team_name=team_config['name'],
+            connector=connector,
+            rag_enabled=team_config.get('rag_enabled', True),
+            cag_enabled=team_config.get('cag_enabled', True),
+            auto_push=team_config.get('auto_push', False)
+        )
     
     def register_team(self, config: TeamConfiguration):
         """Register a team for automated test case generation"""
@@ -75,39 +191,83 @@ class WorkflowOrchestrator:
         """Process test case generation for a single team"""
         logger.info(f"Starting test case generation for team: {team_name}")
         start_time = time.time()
-        
+
         try:
             # Fetch requirements
             logger.debug(f"Fetching requirements for team: {team_name}")
             raw_requirements = config.connector.fetch_requirements()
             logger.info(f"Fetched {len(raw_requirements)} requirements for team: {team_name}")
-            
+
             if not raw_requirements:
                 logger.warning(f"No requirements found for team: {team_name}")
                 return []
-            
-            # Convert to simple text list for processing
-            requirements_text = []
+
+            # Validate and convert to simple text list for processing
+            requirements_text: List[str] = []
+            valid_requirements: List[Dict[str, Any]] = []
+            skipped = 0
             for req in raw_requirements:
+                if not req.get('id') or not req.get('summary'):
+                    logger.error(
+                        f"Skipping requirement missing mandatory fields (id/summary): {str(req)[:120]}"
+                    )
+                    skipped += 1
+                    continue
                 req_text = f"{req['summary']}\n{req.get('description', '')}"
                 requirements_text.append(req_text)
-                logger.debug(f"Processing requirement {req['id']}: {req['summary'][:50]}...")
-            
+                valid_requirements.append(req)
+                logger.debug(
+                    f"Processing requirement {req['id']}: {req['summary'][:50]}..."
+                )
+            if skipped:
+                logger.warning(f"Skipped {skipped} invalid requirements for team: {team_name}")
+
             # Generate test cases using the agent
             logger.info(f"Generating test cases for team: {team_name} with {len(requirements_text)} requirements")
             test_cases = await self.agent.generate_test_cases_for_team(
                 team_name, requirements_text
             )
             logger.info(f"Generated {len(test_cases)} test cases for team: {team_name}")
-            
-            # Add traceability
+
+            # Add traceability and provenance
             traced_count = 0
+            from src.models.test_case_schemas import TestCaseProvenance
             for i, test_case in enumerate(test_cases):
-                if i < len(raw_requirements):
-                    test_case.requirements_traced = [raw_requirements[i]['id']]
+                if i < len(valid_requirements):
+                    source_req = valid_requirements[i]
+                    test_case.requirements_traced = [source_req['id']]
                     traced_count += 1
-                    logger.debug(f"Added traceability for test case {test_case.id} to requirement {raw_requirements[i]['id']}")
-            
+                    # Build provenance, prefer connector-provided source details
+                    src_meta = source_req.get('source') or {}
+                    system = src_meta.get('system')
+                    source_id = src_meta.get('source_id') or source_req['id']
+                    url = src_meta.get('url')
+                    if not system:
+                        # Infer from connector type when absent
+                        cname = type(config.connector).__name__.lower()
+                        if 'jira' in cname:
+                            system = 'jira'
+                        elif 'github' in cname:
+                            system = 'github'
+                        else:
+                            system = 'unknown'
+                        # Best-effort URL for GitHub from team string if present
+                        if not url and system == 'github':
+                            team_str = source_req.get('team', '')
+                            if '/' in team_str:
+                                owner, repo = team_str.split('/', 1)
+                                url = f"https://github.com/{owner}/{repo}/issues/{source_id}"
+                    test_case.provenance = TestCaseProvenance(
+                        system=system,
+                        source_id=str(source_id),
+                        url=url,
+                        summary=source_req.get('summary'),
+                        extra={'team': source_req.get('team')}
+                    )
+                    logger.debug(
+                        f"Provenance set for test case {test_case.id}: system={system}, source_id={source_id}, url={url}"
+                    )
+
             logger.info(f"Added traceability to {traced_count} test cases for team: {team_name}")
             
             # Auto-push if enabled

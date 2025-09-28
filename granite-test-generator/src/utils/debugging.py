@@ -172,7 +172,7 @@ class TestGraniteSystem(unittest.TestCase):
     
     async def test_agent_workflow(self):
         """Test the agent-based test generation workflow"""
-        from src.agents.test_generation_agent import TestGenerationAgent
+        from src.agents.generation_agent import TestGenerationAgent
         
         # Mock dependencies
         mock_granite = Mock()
