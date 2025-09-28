@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 import pytest
 
 
+@pytest.mark.regression
 def test_import_main():
     """Test that main.py can be imported without errors."""
     try:
@@ -19,6 +20,7 @@ def test_import_main():
         pytest.fail(f"Failed to import main module: {e}")
 
 
+@pytest.mark.regression
 def test_main_function():
     """Test that the main function runs without errors."""
     try:

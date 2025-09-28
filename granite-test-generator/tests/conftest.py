@@ -1,37 +1,45 @@
-"""Pytest configuration and path setup to ensure `src` is importable.
-
-This makes tests robust across environments and Python versions by
-explicitly adding the project root (which contains `src/`) to sys.path.
-"""
-
-from __future__ import annotations
-
 import sys
+import types
 from pathlib import Path
-import pytest
 
-# Add project root (the parent of the tests directory) to sys.path
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+# Ensure repo root and package root are on sys.path so `src` imports resolve
+_this = Path(__file__).resolve()
+pkg_root = _this.parents[1]           # granite-test-generator/tests -> granite-test-generator
+repo_root = pkg_root.parent           # project root
+for p in (str(pkg_root), str(repo_root)):
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
+# Lightweight stubs for optional heavy deps to keep test import-time stable
+if "langchain" not in sys.modules:
+    stub_lc = types.ModuleType("langchain")
+    sys.modules["langchain"] = stub_lc
+    sys.modules["langchain.agents"] = types.ModuleType("langchain.agents")
+    sys.modules["langchain.tools"] = types.ModuleType("langchain.tools")
+    sys.modules["langchain.schema"] = types.ModuleType("langchain.schema")
+    setattr(sys.modules["langchain.agents"], "AgentType", object)
+    def _dummy(*args, **kwargs):
+        return None
+    setattr(sys.modules["langchain.agents"], "initialize_agent", _dummy)
+    class _StubTool:
+        def __init__(self, *args, **kwargs):
+            self.name = kwargs.get("name")
+        def __call__(self, *args, **kwargs):
+            return None
+    setattr(sys.modules["langchain.tools"], "Tool", _StubTool)
+    setattr(sys.modules["langchain.schema"], "AgentAction", object)
+    setattr(sys.modules["langchain.schema"], "AgentFinish", object)
 
-def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
-    """Automatically skip tests marked 'mlx' when MLX is unavailable.
+if "mlx_lm" not in sys.modules:
+    sys.modules["mlx_lm"] = types.ModuleType("mlx_lm")
+    def _dummy_generate(*args, **kwargs):
+        return "[TEST_CASE][SUMMARY]stub[/SUMMARY][INPUT_DATA]{}[/INPUT_DATA][STEPS]1. s -> e[/STEPS][EXPECTED]ok[/EXPECTED][/TEST_CASE]"
+    sys.modules["mlx_lm"].generate = _dummy_generate
 
-    MLX (mlx_lm) is an Apple Silicon-specific stack and is typically not
-    available in Linux CI. Tests that explicitly require MLX should be marked
-    with `@pytest.mark.mlx`. This hook adds a skip marker in such environments.
-    """
-    try:
-        from src.models.granite_moe import _MLX_AVAILABLE  # type: ignore
-    except Exception:
-        _MLX_AVAILABLE = False  # noqa: N806
-
-    if _MLX_AVAILABLE:
-        return
-
-    skip_mlx = pytest.mark.skip(reason="MLX stack (mlx_lm) not available in this environment")
-    for item in items:
-        if "mlx" in item.keywords:
-            item.add_marker(skip_mlx)
+# Provide a stub chromadb module so tests can monkeypatch PersistentClient
+if "chromadb" not in sys.modules:
+    chroma = types.ModuleType("chromadb")
+    def _pc(*args, **kwargs):
+        raise Exception("chromadb stub called without override")
+    chroma.PersistentClient = _pc  # type: ignore
+    sys.modules["chromadb"] = chroma

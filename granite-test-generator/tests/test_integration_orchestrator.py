@@ -4,6 +4,7 @@ import asyncio
 
 
 @pytest.mark.integration
+@pytest.mark.e2e
 def test_orchestrator_e2e_minimal():
     # Lazy import to avoid heavy deps on collection
     from src.integration.workflow_orchestrator import WorkflowOrchestrator, TeamConfiguration
@@ -33,4 +34,3 @@ def test_orchestrator_e2e_minimal():
     assert 'teamA' in results
     assert isinstance(results['teamA'], list)
     assert len(results['teamA']) == 1
-
