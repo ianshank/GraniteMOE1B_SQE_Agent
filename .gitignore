@@ -15,6 +15,10 @@ htmlcov/
 env/
 venv/
 
+# Environment variables (may contain secrets)
+.env
+.env.local
+
 # IDE/editor
 .idea/
 .vscode/

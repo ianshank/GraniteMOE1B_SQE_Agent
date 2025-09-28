@@ -17,6 +17,7 @@ from src.utils.constants import (
     DEFAULT_MODEL_NAME, DEFAULT_OUTPUT_DIR, DEFAULT_REQUIREMENTS_DIR,
     APP_NAME, APP_DESCRIPTION
 )
+from src.utils.config_utils import get_config_with_defaults
 
 logger = logging.getLogger(__name__)
 
@@ -52,15 +53,13 @@ class GraniteTestCaseGenerator:
             logger.debug("Using provided configuration dictionary")
             return config_dict
         
-        # Otherwise, load from file
-        import yaml
+        # Otherwise, load from file with environment variable substitution
         try:
-            with open(config_path, 'r') as f:
-                config = yaml.safe_load(f)
-                logger.debug(f"Loaded configuration from {config_path}")
-                return config or {}
-        except FileNotFoundError:
-            logger.warning(f"Configuration file not found: {config_path}")
+            config = get_config_with_defaults(config_path)
+            logger.debug(f"Loaded configuration from {config_path}")
+            return config or {}
+        except Exception as e:
+            logger.warning(f"Failed to load configuration from {config_path}: {e}")
             return {}
     
     async def initialize_system(self):
