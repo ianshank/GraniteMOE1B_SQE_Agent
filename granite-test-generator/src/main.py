@@ -9,7 +9,7 @@ from src.utils.kv_cache import KVCache
 from src.utils.chunking import IntelligentChunker
 from src.agents.test_generation_agent import TestGenerationAgent
 from src.integration.workflow_orchestrator import WorkflowOrchestrator, TeamConfiguration
-from src.integration.team_connectors import JiraConnector, GitHubConnector
+from src.integration.team_connectors import JiraConnector, GitHubConnector, LocalFileSystemConnector
 from src.data.data_processors import TestCaseDataProcessor
 
 class GraniteTestCaseGenerator:
@@ -18,12 +18,41 @@ class GraniteTestCaseGenerator:
     def __init__(self, config_path: str = "config/model_config.yaml"):
         self.config = self._load_config(config_path)
         self.components = {}
+        # Attempt to load integration config if teams are not provided in the
+        # initial config. This keeps defaults flexible and avoids hard failures
+        # when a separate integration config file is in use.
+        self._maybe_merge_integration_config()
         
     def _load_config(self, config_path: str) -> Dict[str, Any]:
         """Load configuration from YAML file"""
         import yaml
         with open(config_path, 'r') as f:
             return yaml.safe_load(f)
+
+    def _maybe_merge_integration_config(self) -> None:
+        """Merge integration config into loaded config when present.
+
+        Behavior:
+        - If `teams` already present in the current config, do nothing.
+        - Else, try to load path from env var `INTEGRATION_CONFIG_PATH`; if not
+          set, try default `config/integration_config.yaml` if it exists.
+        - Merge `teams` into `self.config`.
+        """
+        if self.config.get("teams"):
+            return
+        import os, yaml
+        candidate = os.environ.get("INTEGRATION_CONFIG_PATH")
+        default_path = Path("config/integration_config.yaml")
+        try_path = Path(candidate) if candidate else default_path
+        if try_path.exists():
+            try:
+                with open(try_path, "r") as f:
+                    integ = yaml.safe_load(f) or {}
+                if integ.get("teams"):
+                    self.config["teams"] = integ["teams"]
+            except Exception:
+                # Log soft error; do not crash initialization
+                print(f"Warning: failed to load integration config from {try_path}")
     
     async def initialize_system(self):
         """Initialize all system components"""
@@ -71,11 +100,25 @@ class GraniteTestCaseGenerator:
                      for i, (content, metadata) in enumerate(requirements_docs)]
             
             self.components['rag_retriever'].index_documents(chunks)
+            # Store raw texts for possible fallback generation
+            self.components['requirements_texts'] = [content for content, _ in requirements_docs]
         
         # Process user stories if available
         if Path("data/user_stories.json").exists():
-            user_stories = processor.process_user_stories("data/user_stories.json")
-            print(f"Processed {len(user_stories)} user stories")
+            try:
+                user_stories = processor.process_user_stories("data/user_stories.json")
+                print(f"Processed {len(user_stories)} user stories")
+                # Index user stories in RAG as well
+                from src.utils.chunking import DocumentChunk
+                user_story_chunks = [DocumentChunk(content=content, metadata=metadata,
+                                                   chunk_id=f"us_{i}", source_type='user_story',
+                                                   team_context=metadata.get('team', 'default'))
+                                      for i, (content, metadata) in enumerate(user_stories)]
+                self.components['rag_retriever'].index_documents(user_story_chunks)
+                # Store raw texts for possible fallback generation
+                self.components['user_stories_texts'] = [content for content, _ in user_stories]
+            except Exception as e:
+                print(f"Error processing user stories: {e}")
         
         # Preload CAG cache with common patterns
         team_contexts = list(set([doc[1].get('team', 'default') 
@@ -145,6 +188,11 @@ class GraniteTestCaseGenerator:
                     repo_name=team_config['connector']['repo_name'],
                     token=team_config['connector']['token']
                 )
+            elif connector_type == 'local':
+                connector = LocalFileSystemConnector(
+                    directory=team_config['connector']['path'],
+                    team_name=team_name
+                )
             else:
                 print(f"Unknown connector type: {connector_type}")
                 continue
@@ -165,6 +213,17 @@ class GraniteTestCaseGenerator:
         print("Starting test case generation for all teams...")
         
         results = await self.components['orchestrator'].process_all_teams()
+        # Fallback: if no teams configured or no results, generate from local documents
+        total_before_fallback = sum(len(v) for v in results.values()) if results else 0
+        if (not self.components['orchestrator'].team_configs) or total_before_fallback == 0:
+            fallback_inputs = self.components.get('requirements_texts') or self.components.get('user_stories_texts') or []
+            if fallback_inputs:
+                print(f"No remote teams or results; generating test cases from local documents ({len(fallback_inputs)})...")
+                fallback_cases = await self.components['test_agent'].generate_test_cases_for_team(
+                    'default', fallback_inputs
+                )
+                results = results or {}
+                results['default'] = fallback_cases
         
         # Save results
         output_dir = Path("output")
@@ -203,8 +262,11 @@ async def main():
         # Set up data pipeline
         await generator.setup_data_pipeline()
         
-        # Fine-tune model (optional, if training data exists)
-        await generator.fine_tune_model()
+        # Fine-tune model (optional). On Apple MPS, skip if bfloat16 unsupported
+        try:
+            await generator.fine_tune_model()
+        except Exception as e:
+            print(f"Skipping fine-tuning due to environment constraint: {e}")
         
         # Register teams
         generator.register_teams()
