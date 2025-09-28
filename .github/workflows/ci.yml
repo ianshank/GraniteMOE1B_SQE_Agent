@@ -45,7 +45,7 @@ jobs:
         run: |
           coverage run -a -m pytest -q tests || true
           coverage xml -o coverage.xml
-          coverage report -m --fail-under=24
+          coverage report -m --fail-under=25
           coverage html -d htmlcov
 
       - name: Upload coverage artifact
@@ -86,7 +86,28 @@ jobs:
           # Attempt to install Apple MLX stack (optional); do not fail job if unavailable
           pip install mlx_lm || true
 
-      - name: Run tests (subproject)
+      - name: Check MLX availability
+        id: mlxcheck
         working-directory: granite-test-generator
         run: |
-          pytest -q
+          python - <<'PY'
+          import os
+          try:
+              from src.models.granite_moe import _MLX_AVAILABLE
+          except Exception:
+              _MLX_AVAILABLE = False
+          print(f"_MLX_AVAILABLE={_MLX_AVAILABLE}")
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+              fh.write(f"available={'true' if _MLX_AVAILABLE else 'false'}\n")
+          PY
+
+      - name: Run tests (non-MLX subset)
+        working-directory: granite-test-generator
+        run: |
+          pytest -q -m "not mlx"
+
+      - name: Run MLX-marked tests
+        if: steps.mlxcheck.outputs.available == 'true'
+        working-directory: granite-test-generator
+        run: |
+          pytest -q -m mlx
