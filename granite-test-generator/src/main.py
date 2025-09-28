@@ -51,16 +51,16 @@ class GraniteTestCaseGenerator:
         if config_dict is not None:
             logger.debug("Using provided configuration dictionary")
             # Resolve any environment variables in the provided dictionary
-            from src.utils.config_utils import resolve_env_vars
-            return resolve_env_vars(config_dict)
+            from src.utils.config_utils import substitute_env_vars
+            return substitute_env_vars(config_dict)
         
         # Otherwise, load from file with environment variable resolution
         try:
             # Import yaml here to avoid circular imports
             import yaml
-            from src.utils.config_utils import load_config_with_env_vars
+            from src.utils.config_utils import load_config_with_env
             
-            config = load_config_with_env_vars(config_path)
+            config = load_config_with_env(config_path)
             logger.debug("Loaded configuration from %s", config_path)
             return config
         except FileNotFoundError:
