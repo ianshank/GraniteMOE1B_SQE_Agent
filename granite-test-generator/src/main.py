@@ -13,6 +13,10 @@ from src.agents.generation_agent import TestGenerationAgent
 from src.integration.workflow_orchestrator import WorkflowOrchestrator, TeamConfiguration
 from src.integration.team_connectors import JiraConnector, GitHubConnector, LocalFileSystemConnector
 from src.data.data_processors import TestCaseDataProcessor
+from src.utils.constants import (
+    DEFAULT_MODEL_NAME, DEFAULT_OUTPUT_DIR, DEFAULT_REQUIREMENTS_DIR,
+    APP_NAME, APP_DESCRIPTION
+)
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +65,7 @@ class GraniteTestCaseGenerator:
     
     async def initialize_system(self):
         """Initialize all system components"""
-        print("Initializing Granite Test Case Generation System...")
+        print(f"Initializing {APP_NAME}...")
         
         # Initialize core components
         self.components['chunker'] = IntelligentChunker()
@@ -70,7 +74,7 @@ class GraniteTestCaseGenerator:
         self.components['rag_retriever'] = RAGRetriever()
         
         # Initialize Granite MoE trainer
-        model_name = self.config.get('model_name', 'ibm-granite/granite-3.0-1b-a400m-instruct')
+        model_name = self.config.get('model_name', DEFAULT_MODEL_NAME)
         self.components['granite_trainer'] = GraniteMoETrainer(model_name)
         
         # Initialize agent
@@ -97,7 +101,7 @@ class GraniteTestCaseGenerator:
         processor = TestCaseDataProcessor(self.components['chunker'])
         
         # Get requirements directory from config or use default
-        requirements_dir = self.config.get('paths', {}).get('requirements_dir', "data/requirements")
+        requirements_dir = self.config.get('paths', {}).get('requirements_dir', DEFAULT_REQUIREMENTS_DIR)
         requirements_path = Path(requirements_dir)
         
         # Get user stories path from config or use default
@@ -224,8 +228,8 @@ class GraniteTestCaseGenerator:
                 'name': 'default',
                 'connector': {
                     'type': 'local',
-                    'input_directory': 'data/requirements',
-                    'output_directory': 'output'
+                    'input_directory': DEFAULT_REQUIREMENTS_DIR,
+                    'output_directory': DEFAULT_OUTPUT_DIR
                 },
                 'rag_enabled': True,
                 'cag_enabled': True,
@@ -284,7 +288,7 @@ class GraniteTestCaseGenerator:
         results = await orchestrator.process_all_teams()
         
         # Get output directory from config or use default
-        output_dir_path = self.config.get('paths', {}).get('output_dir', "output")
+        output_dir_path = self.config.get('paths', {}).get('output_dir', DEFAULT_OUTPUT_DIR)
         output_dir = Path(output_dir_path)
         output_dir.mkdir(parents=True, exist_ok=True)
         

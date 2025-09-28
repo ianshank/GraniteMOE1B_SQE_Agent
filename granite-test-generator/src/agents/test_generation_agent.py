@@ -18,6 +18,7 @@ except Exception:  # pragma: no cover - optional dependency fallback for CI/test
 from typing import List, Dict, Any, Optional
 import asyncio
 from typing import TYPE_CHECKING
+from src.utils.constants import TEMPLATE_PATTERNS
 from src.models.test_case_schemas import (
     TestCase,
     TestStep,
@@ -136,26 +137,11 @@ Create a comprehensive test case with summary, input data, steps, and expected r
         # Derive domain-specific steps
         req_lower = requirement.lower()
         if any(k in req_lower for k in ["login", "authenticate", "sign in"]):
-            raw_steps = [
-                "Open login page -> Page loads",
-                "Enter valid credentials -> Credentials accepted",
-                "Submit form -> User redirected to dashboard",
-                "Verify session cookie -> Session established"
-            ]
+            raw_steps = TEMPLATE_PATTERNS["login"]
         elif any(k in req_lower for k in ["upload", "ingest"]):
-            raw_steps = [
-                "Prepare sample file -> File ready",
-                "Upload file -> Server responds 202",
-                "Poll status -> Processing completes",
-                "Validate stored object -> MD5 matches"
-            ]
+            raw_steps = TEMPLATE_PATTERNS["upload"]
         else:
-            raw_steps = [
-                "Set up pre-conditions -> Environment ready",
-                "Execute primary action -> Action succeeds",
-                "Observe output -> Output matches requirement",
-                "Clean up data -> State restored"
-            ]
+            raw_steps = TEMPLATE_PATTERNS["default"]
 
         steps_block = "\n".join([f"{i+1}. {s}" for i, s in enumerate(raw_steps)])
 
