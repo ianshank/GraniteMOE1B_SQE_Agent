@@ -1,0 +1,45 @@
+teams:
+  - name: "ads_team"
+    connector:
+      type: "local"
+      input_directory: "data/user_stories"
+      output_directory: "output"
+    rag_enabled: true
+    cag_enabled: true
+    auto_push: false
+
+  - name: "ast_team"
+    connector:
+      type: "local"
+      input_directory: "data/user_stories"
+      output_directory: "output"
+    rag_enabled: true
+    cag_enabled: true
+    auto_push: false
+
+  - name: "cms_team"
+    connector:
+      type: "local"
+      input_directory: "data/user_stories"
+      output_directory: "output"
+    rag_enabled: true
+    cag_enabled: true
+    auto_push: false
+
+  - name: "ing_team"
+    connector:
+      type: "local"
+      input_directory: "data/user_stories"
+      output_directory: "output"
+    rag_enabled: true
+    cag_enabled: true
+    auto_push: false
+
+  - name: "plb_team"
+    connector:
+      type: "local"
+      input_directory: "data/user_stories"
+      output_directory: "output"
+    rag_enabled: true
+    cag_enabled: true
+    auto_push: false

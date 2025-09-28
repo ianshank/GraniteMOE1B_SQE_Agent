@@ -3,7 +3,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, List
 from src.models.granite_moe import GraniteMoETrainer
 from src.data.rag_retriever import RAGRetriever
 from src.data.cag_cache import CAGCache
@@ -64,6 +64,130 @@ class GraniteTestCaseGenerator:
         """Return True when local-only connector mode is requested via environment."""
         flag = os.getenv("GRANITE_LOCAL_ONLY", "")
         return flag.strip().lower() in {"1", "true", "yes", "on"}
+    
+    def _load_integration_config_with_precedence(self, base_teams: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Load integration config with proper precedence handling.
+        
+        Configuration precedence:
+        1. GRANITE_CONFIG_OVERRIDE_MODE=replace: Integration config replaces base config
+        2. GRANITE_CONFIG_OVERRIDE_MODE=merge (default): Integration config extends base config
+        3. Duplicate team names: Later configuration wins
+        
+        Args:
+            base_teams: Teams from base configuration
+            
+        Returns:
+            Final teams configuration with proper precedence applied
+            
+        Raises:
+            yaml.YAMLError: If integration config file contains invalid YAML
+        """
+        integ_path = os.getenv("INTEGRATION_CONFIG_PATH")
+        if not integ_path or not Path(integ_path).exists():
+            logger.debug("No integration config override found, using base teams")
+            return base_teams
+        
+        try:
+            import yaml
+            with open(integ_path, 'r', encoding='utf-8') as f:
+                integ_cfg = yaml.safe_load(f) or {}
+            
+            extra_teams = integ_cfg.get('teams', []) or []
+            if not extra_teams:
+                logger.warning(f"Integration config {integ_path} contains no teams")
+                return base_teams
+            
+            # Normalize connector configurations
+            normalized_teams = self._normalize_connector_configs(extra_teams)
+            
+            # Determine merge behavior
+            override_mode = os.getenv("GRANITE_CONFIG_OVERRIDE_MODE", "merge").lower()
+            
+            if override_mode == "replace":
+                logger.info(f"REPLACE mode: Using {len(normalized_teams)} teams from {integ_path}, ignoring base config")
+                return normalized_teams
+            else:
+                # Merge mode with deduplication (integration config wins for duplicates)
+                merged_teams = self._merge_and_deduplicate_teams(base_teams, normalized_teams)
+                logger.info(f"MERGE mode: Combined {len(base_teams)} base + {len(normalized_teams)} integration = {len(merged_teams)} final teams")
+                return merged_teams
+                
+        except Exception as e:
+            logger.error(f"Failed to load integration config from {integ_path}: {e}")
+            logger.info("Falling back to base configuration teams")
+            return base_teams
+    
+    def _normalize_connector_configs(self, teams: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Normalize connector configurations to handle legacy field names.
+        
+        Args:
+            teams: Raw team configurations
+            
+        Returns:
+            Teams with normalized connector configurations
+        """
+        normalized = []
+        for team in teams:
+            if not isinstance(team, dict):
+                logger.warning(f"Skipping invalid team configuration: expected dict, got {type(team)}")
+                continue
+                
+            team_copy = team.copy()
+            conn = team_copy.get('connector', {}) or {}
+            
+            if conn.get('type', '').lower() == 'local':
+                # Handle legacy field names
+                if 'path' in conn and 'input_directory' not in conn:
+                    conn['input_directory'] = str(conn['path'])
+                    logger.debug(f"Normalized 'path' to 'input_directory' for team {team.get('name', 'unknown')}")
+                
+                if 'output' in conn and 'output_directory' not in conn:
+                    conn['output_directory'] = str(conn['output'])
+                    logger.debug(f"Normalized 'output' to 'output_directory' for team {team.get('name', 'unknown')}")
+                
+                # Clean up legacy fields
+                conn.pop('path', None)
+                conn.pop('output', None)
+            
+            normalized.append(team_copy)
+        return normalized
+    
+    def _merge_and_deduplicate_teams(self, base_teams: List[Dict[str, Any]], integration_teams: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Merge base and integration teams, with integration teams taking precedence for duplicates.
+        
+        Args:
+            base_teams: Teams from base configuration
+            integration_teams: Teams from integration configuration
+            
+        Returns:
+            Merged and deduplicated teams list
+        """
+        # Create lookup for integration teams by name
+        integration_by_name = {}
+        for team in integration_teams:
+            name = team.get('name')
+            if name:
+                integration_by_name[name] = team
+        
+        # Start with base teams, excluding those overridden by integration
+        merged = []
+        overridden_count = 0
+        
+        for team in base_teams:
+            name = team.get('name')
+            if name and name in integration_by_name:
+                logger.info(f"Team '{name}' overridden by integration config")
+                overridden_count += 1
+            else:
+                merged.append(team)
+        
+        # Add all integration teams
+        merged.extend(integration_teams)
+        
+        if overridden_count > 0:
+            logger.info(f"Integration config overrode {overridden_count} base team(s)")
+        
+        return merged
     
     async def initialize_system(self):
         """Initialize all system components"""
@@ -204,30 +328,8 @@ class GraniteTestCaseGenerator:
         if self.local_only_mode:
             logger.warning("GRANITE_LOCAL_ONLY enabled; forcing LocalFileSystemConnector for all teams.")
 
-        # Optionally merge integration config file specified via env var
-        integ_path = os.getenv("INTEGRATION_CONFIG_PATH")
-        if integ_path and Path(integ_path).exists():
-            try:
-                import yaml
-                with open(integ_path, 'r', encoding='utf-8') as f:
-                    integ_cfg = yaml.safe_load(f) or {}
-                extra_teams = integ_cfg.get('teams', []) or []
-                # Normalize connector fields for local connectors (accept 'path' alias)
-                for t in extra_teams:
-                    conn = t.get('connector', {}) or {}
-                    if conn.get('type', '').lower() == 'local':
-                        if 'path' in conn and 'input_directory' not in conn:
-                            conn['input_directory'] = str(conn['path'])
-                        # Normalize 'output' key if provided
-                        if 'output' in conn and 'output_directory' not in conn:
-                            conn['output_directory'] = str(conn['output'])
-                        # Cleanup aliases
-                        conn.pop('path', None)
-                        conn.pop('output', None)
-                teams_config.extend(extra_teams)
-                logger.info(f"Merged {len(extra_teams)} teams from integration config: {integ_path}")
-            except Exception as e:
-                logger.error(f"Failed to load integration config from {integ_path}: {e}")
+        # Load integration config with proper precedence handling
+        teams_config = self._load_integration_config_with_precedence(teams_config)
         
         if not teams_config:
             logger.warning("No teams configured. Using default local team.")
@@ -295,26 +397,61 @@ class GraniteTestCaseGenerator:
                 logger.warning(f"Team registration failed or none configured: {e}")
         results = await orchestrator.process_all_teams()
         
+        # DIAGNOSTIC: Log the exact results structure for debugging
+        logger.info(f"DIAGNOSTIC: process_all_teams() returned {len(results)} teams")
+        for team_name, test_cases in results.items():
+            logger.info(f"DIAGNOSTIC: Team '{team_name}' has {len(test_cases)} test cases of type {type(test_cases)}")
+            if test_cases:
+                logger.info(f"DIAGNOSTIC: First test case type: {type(test_cases[0])}, has model_dump: {hasattr(test_cases[0], 'model_dump')}")
+        
         # Get output directory from config or use default
         output_dir_path = self.config.get('paths', {}).get('output_dir', "output")
         output_dir = Path(output_dir_path)
         output_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"DIAGNOSTIC: Writing to output directory: {output_dir.absolute()}")
         
         total_generated = 0
+        files_written = 0
+        
         for team_name, test_cases in results.items():
             total_generated += len(test_cases)
             
-            # Save test cases as JSON
+            # Save test cases as JSON with enhanced error handling and logging
             output_file = output_dir / f"{team_name}_test_cases.json"
-            with open(output_file, 'w') as f:
-                test_cases_dict = [
-                    (tc.model_dump() if hasattr(tc, 'model_dump') else tc.dict())
-                    for tc in test_cases
-                ]
-                json.dump(test_cases_dict, f, indent=2, default=str)
+            
+            try:
+                logger.info(f"DIAGNOSTIC: Writing {len(test_cases)} test cases to {output_file}")
+                
+                with open(output_file, 'w') as f:
+                    test_cases_dict = []
+                    for i, tc in enumerate(test_cases):
+                        try:
+                            if hasattr(tc, 'model_dump'):
+                                tc_dict = tc.model_dump()
+                            elif hasattr(tc, 'dict'):
+                                tc_dict = tc.dict()
+                            else:
+                                logger.error(f"DIAGNOSTIC: Test case {i} has no serialization method: {type(tc)}")
+                                tc_dict = str(tc)
+                            test_cases_dict.append(tc_dict)
+                        except Exception as e:
+                            logger.error(f"DIAGNOSTIC: Failed to serialize test case {i}: {e}")
+                            continue
+                    
+                    json.dump(test_cases_dict, f, indent=2, default=str)
+                    logger.info(f"DIAGNOSTIC: Successfully wrote {len(test_cases_dict)} test cases to {output_file}")
+                
+                files_written += 1
+                
+            except Exception as e:
+                logger.error(f"DIAGNOSTIC: Failed to write test cases to {output_file}: {e}")
+                logger.error(f"DIAGNOSTIC: Exception type: {type(e)}, args: {e.args}")
+                continue
             
             logger.info(f"Generated {len(test_cases)} test cases for team: {team_name}")
             print(f"Generated {len(test_cases)} test cases for team: {team_name}")
+        
+        logger.info(f"DIAGNOSTIC: Successfully wrote {files_written} team files out of {len(results)} teams")
         
         # Generate quality report
         quality_report = self.components['orchestrator'].generate_quality_report()
