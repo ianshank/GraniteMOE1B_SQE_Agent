@@ -45,7 +45,7 @@ jobs:
         run: |
           coverage run -a -m pytest -q tests || true
           coverage xml -o coverage.xml
-          coverage report -m --fail-under=20
+          coverage report -m --fail-under=24
           coverage html -d htmlcov
 
       - name: Upload coverage artifact
