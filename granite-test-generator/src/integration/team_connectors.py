@@ -306,6 +306,21 @@ class LocalFileSystemConnector(TeamConnector):
         self.output_directory = Path(output_directory) if output_directory else Path(f"output/{team_name}")
         self.file_types = file_types or [".md", ".txt", ".json"]
         logger.info(f"LocalFileSystemConnector initialized for team {team_name} at {input_directory}")
+
+    def _normalize_description(self, description: Any) -> str:
+        """Normalize a description field to a string without double-encoding.
+
+        - If description is a dict, serialize compactly using json.dumps (consistent with
+          existing behavior and tests).
+        - If it's already a string, return as-is.
+        - For other primitive types, coerce to string for robustness.
+        """
+        if isinstance(description, dict):
+            try:
+                return json.dumps(description)
+            except Exception:
+                return str(description)
+        return description if isinstance(description, str) else str(description)
     
     def _extract_title(self, content: str) -> Optional[str]:
         """Extract a title from the content of a file.
@@ -496,10 +511,7 @@ class LocalFileSystemConnector(TeamConnector):
                     if 'description' in item or 'summary' in item or 'title' in item:
                         req_id = item.get('id', f"{file_path.stem}_{i+1}")
                         summary = item.get('summary', item.get('title', f"Requirement {i+1}"))
-                        description = item.get('description', '')
-                        if isinstance(description, dict):
-                            # Handle nested description objects by converting to string
-                            description = json.dumps(description)
+                        description = self._normalize_description(item.get('description', ''))
                             
                         req_data = {
                             'id': str(req_id),
@@ -548,9 +560,7 @@ class LocalFileSystemConnector(TeamConnector):
                 if not found_nested and any(k in data for k in ('summary', 'title', 'description')):
                     req_id = data.get('id', file_path.stem)
                     summary = data.get('summary', data.get('title', file_path.stem))
-                    description = data.get('description', '')
-                    if isinstance(description, dict):
-                        description = json.dumps(description)
+                    description = self._normalize_description(data.get('description', ''))
                     req_data = {
                         'id': str(req_id),
                         'summary': summary,
