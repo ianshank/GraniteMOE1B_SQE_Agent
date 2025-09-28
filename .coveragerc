@@ -1,0 +1,54 @@
+# Coverage configuration for Granite Test Case Generator
+# Addresses CI coverage failures with temporary/dynamic modules
+
+[run]
+source = src, granite-test-generator/src
+omit = 
+    # Test files
+    */tests/*
+    */test_*
+    */*test*
+    # Virtual environments
+    */.venv/*
+    */venv/*
+    # Temporary files and dynamic modules
+    */tmp/*
+    */_remote_module_*
+    */tmpaf76mqvx/*
+    # Cache and build artifacts
+    */__pycache__/*
+    */build/*
+    */dist/*
+    */.pytest_cache/*
+    # External dependencies
+    */site-packages/*
+    # MLX and other dynamic imports that create temporary modules
+    */mlx_lm/*
+    */transformers/*
+
+[report]
+# Ignore errors from missing source files (temporary/dynamic modules)
+ignore_errors = True
+skip_covered = True
+skip_empty = True
+precision = 2
+show_missing = True
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod
+
+[html]
+directory = htmlcov
+skip_covered = True
+skip_empty = True
+
+[xml]
+output = coverage.xml

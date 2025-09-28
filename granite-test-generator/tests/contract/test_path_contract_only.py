@@ -1,8 +1,8 @@
 """
-Contract tests for path resolution - NO TEST CASE GENERATION.
+Contract tests for path resolution infrastructure.
 
-Defines contracts that LocalFileSystemConnector must fulfill regarding
-path handling and file system operations. Does NOT generate test cases.
+IMPORTANT: Defines contracts for path handling and file system operations only.
+No test case generation - all test cases must come from E2E flow.
 """
 
 import os
@@ -17,7 +17,7 @@ from src.main import GraniteTestCaseGenerator
 
 
 class TestLocalFileSystemConnectorPathContract:
-    """Contract tests for path handling ONLY - no test case generation."""
+    """Contract tests for path handling infrastructure."""
     
     def test_contract_input_directory_storage(self, tmp_path):
         """CONTRACT: Connector must properly store input directory as Path object."""
@@ -99,7 +99,7 @@ class TestLocalFileSystemConnectorPathContract:
 
 
 class TestConfigurationPrecedenceContract:
-    """Contract tests for configuration precedence ONLY - no test case generation."""
+    """Contract tests for configuration precedence infrastructure."""
     
     def test_contract_environment_variable_precedence(self):
         """CONTRACT: Environment variables must take precedence over config files."""

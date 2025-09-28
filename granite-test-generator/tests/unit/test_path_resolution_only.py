@@ -1,13 +1,14 @@
 """
-Unit tests for path resolution fix - NO TEST CASE GENERATION.
+Unit tests for path resolution fix.
 
-These tests ONLY validate:
+IMPORTANT: These tests validate infrastructure only - no test case generation.
+All test cases must come from the E2E flow using real user story files.
+
+Tests validate:
 1. Path resolution correctness
-2. Configuration precedence logic  
-3. File system operations
+2. Configuration precedence logic
+3. File system operations  
 4. Error handling
-
-NEVER generates test cases - only validates infrastructure.
 """
 
 import os
@@ -23,7 +24,7 @@ from src.integration.team_connectors import LocalFileSystemConnector
 
 
 class TestPathResolutionOnly:
-    """Test ONLY path resolution - no test case generation."""
+    """Test path resolution infrastructure."""
     
     def test_local_connector_path_attribute_exists(self, tmp_path):
         """Test that LocalFileSystemConnector properly stores input directory."""
@@ -189,7 +190,7 @@ class TestPathResolutionOnly:
 
 
 class TestPathValidationOnly:
-    """Test ONLY path validation - no test case operations."""
+    """Test path validation infrastructure."""
     
     def test_path_normalization_legacy_fields(self):
         """Test path normalization handles legacy field names."""
@@ -242,7 +243,7 @@ class TestPathValidationOnly:
 
 
 class TestFileSystemOperationsOnly:
-    """Test ONLY file system operations - no test case generation."""
+    """Test file system operations infrastructure."""
     
     def test_connector_handles_missing_directory_gracefully(self):
         """Test that connector handles missing directories without crashing."""
@@ -287,7 +288,7 @@ class TestFileSystemOperationsOnly:
 
 
 class TestEnvironmentVariableHandling:
-    """Test ONLY environment variable handling - no test case generation."""
+    """Test environment variable handling infrastructure."""
     
     @pytest.mark.parametrize("env_value,expected", [
         ("true", True),
