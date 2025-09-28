@@ -1,8 +1,9 @@
-from typing import Dict, List, Any, TYPE_CHECKING
+from typing import Dict, List, Any, TYPE_CHECKING, Optional
 import requests
 import json
 from abc import ABC, abstractmethod
 import logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -16,11 +17,77 @@ class TeamConnector(ABC):
     def fetch_requirements(self) -> List[Dict[str, Any]]:
         """Fetches requirements from the connected system."""
         pass
-    
-    @abstractmethod
+
+
+class LocalFileSystemConnector(TeamConnector):
+    """Connector that reads requirements from local text/markdown files.
+
+    Files are read from a specified directory. Each file becomes a requirement with
+    the first line used as the summary and the full content as the description.
+
+    Design choices:
+    - Safe-by-default: ignores non-text/markdown files.
+    - Structured logging at error/decision points.
+    - No-op `push_test_cases` (returns True) since local file systems typically
+      don’t accept push operations for test cases.
+    """
+
+    def __init__(self, directory: str, team_name: Optional[str] = None) -> None:
+        self.directory = str(directory)
+        self._team_name = team_name
+        logger.debug(f"LocalFileSystemConnector initialized for directory: {self.directory}")
+
+    def fetch_requirements(self) -> List[Dict[str, Any]]:
+        """Load .txt/.md files in the directory as requirements.
+
+        Returns:
+            A list of dicts with keys: id, summary, description, type, priority, team
+        """
+        base = Path(self.directory)
+        requirements: List[Dict[str, Any]] = []
+
+        if not base.exists():
+            logger.error(f"Local requirements directory does not exist: {base}")
+            return requirements
+        if not base.is_dir():
+            logger.error(f"Local requirements path is not a directory: {base}")
+            return requirements
+
+        team_value = self._team_name or base.name
+
+        for path in sorted(base.iterdir()):
+            if not path.is_file():
+                continue
+            if path.suffix.lower() not in {".txt", ".md"}:
+                continue
+            try:
+                content = path.read_text(encoding="utf-8")
+            except Exception as e:
+                logger.error(f"Failed to read requirement file {path}: {e}")
+                continue
+
+            first_line = next((ln.strip() for ln in content.splitlines() if ln.strip()), path.name)
+            requirements.append({
+                "id": path.name,
+                "summary": first_line,
+                "description": content,
+                "type": "File",
+                "priority": "medium",
+                "team": team_value,
+            })
+
+        logger.info(f"Fetched {len(requirements)} local requirements from {base}")
+        return requirements
+
     def push_test_cases(self, test_cases: List['TestCase']) -> bool:
-        """Pushes generated test cases to the connected system."""
-        pass
+        """No-op push for local connector. Always returns True.
+
+        Rationale: For a local-only workflow, pushing is typically handled by a
+        different component (e.g., writing JSON files). This method exists to
+        satisfy the `TeamConnector` contract.
+        """
+        logger.info("LocalFileSystemConnector.push_test_cases called (no-op).")
+        return True
 
 class JiraConnector(TeamConnector):
     """Connector for teams using Jira for requirements management"""
@@ -57,6 +124,13 @@ class JiraConnector(TeamConnector):
             logger.info(f"Successfully fetched {len(requirements)} requirements from Jira.")
             return requirements
         except requests.exceptions.RequestException as e:
+            status = getattr(getattr(e, 'response', None), 'status_code', None)
+            if status == 401:
+                msg = (
+                    "Unauthorized (401) when fetching from Jira. Verify username/API token and permissions."
+                )
+                logger.error(msg)
+                raise Exception(msg) from e
             logger.error(f"Failed to fetch from Jira: {e}")
             raise Exception(f"Failed to fetch from Jira: {e}")
         except json.JSONDecodeError as e:
@@ -158,6 +232,13 @@ class GitHubConnector(TeamConnector):
             logger.info(f"Successfully fetched {len(requirements)} requirements from GitHub.")
             return requirements
         except requests.exceptions.RequestException as e:
+            status = getattr(getattr(e, 'response', None), 'status_code', None)
+            if status == 401:
+                msg = (
+                    "Unauthorized (401) when fetching from GitHub. Ensure the token is valid and has appropriate scopes (e.g., 'repo')."
+                )
+                logger.error(msg)
+                raise Exception(msg) from e
             logger.error(f"Failed to fetch from GitHub Issues: {e}")
             raise Exception(f"Failed to fetch from GitHub: {e}")
         except json.JSONDecodeError as e:

@@ -1,0 +1,17 @@
+pytest==8.4.2
+pytest-asyncio==1.2.0
+pytest-cov==7.0.0
+# Allow resolver to select a version compatible with langchain-community
+requests>=2.31.0,<3
+pydantic==2.11.9
+langchain-core==0.3.76
+langchain-community==0.3.30
+
+# Retrieval stack (ensure full initialization in CI)
+sentence-transformers
+chromadb
+rank-bm25
+langchain-huggingface
+
+# CSV processing for data processors tests
+pandas

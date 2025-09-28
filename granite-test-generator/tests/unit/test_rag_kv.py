@@ -140,7 +140,7 @@ class TestRAGRetriever:
         assert retriever.chroma_client is None
         assert retriever.collection is None
     
-    @patch('langchain.embeddings.HuggingFaceEmbeddings')
+    @patch('src.data.rag_retriever.HuggingFaceEmbeddings')
     def test_rag_embedding_initialization_failure(self, mock_hf_embeddings):
         """Test fallback when HuggingFace embeddings fail to load"""
         # Mock embedding initialization to fail

@@ -55,3 +55,21 @@ class IntelligentChunker:
                 ))
                 
         return chunks
+
+    def _apply_sliding_window(self, chunks: List[DocumentChunk]) -> List[DocumentChunk]:
+        """Apply a simple sliding window across sequential requirement chunks.
+
+        This placeholder preserves existing chunk boundaries and can be
+        extended to merge neighboring segments with `self.overlap` if
+        downstream consumers benefit from contextual overlap.
+
+        Args:
+            chunks: Ordered list of DocumentChunk items produced from a single document.
+
+        Returns:
+            The input chunks unchanged (non-destructive default).
+        """
+        # Non-destructive default: do not alter chunks. Implement token-aware
+        # windows if/when required. This preserves behavior and avoids errors
+        # when overlap logic is not needed.
+        return chunks
