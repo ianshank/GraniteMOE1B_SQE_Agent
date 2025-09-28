@@ -2,8 +2,8 @@ import sys
 import os
 from pathlib import Path
 
-# Add the src directory to Python path
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Ensure project root is available on the import path so `src` package resolves
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pytest
 
@@ -25,8 +25,12 @@ def test_main_function():
     """Test that the main function runs without errors."""
     try:
         import main
-        # Should not raise an exception
-        main.main()
+        original_cwd = os.getcwd()
+        try:
+            # Should not raise an exception
+            main.main()
+        finally:
+            os.chdir(original_cwd)
     except Exception as e:
         pytest.fail(f"Main function failed: {e}")
 

@@ -11,6 +11,92 @@ class DebugLogger:
     def __init__(self, log_level=logging.INFO):
         self.logger = self._setup_logger(log_level)
         self.performance_metrics = {}
+        self.path_validation_cache = {}
+    
+    def validate_path_resolution(self, input_directory: str, team_name: str) -> Dict[str, Any]:
+        """Validate and debug path resolution for team connectors.
+        
+        Args:
+            input_directory: Input directory path to validate
+            team_name: Team name for context
+            
+        Returns:
+            Validation result with detailed diagnostics
+        """
+        cache_key = f"{team_name}:{input_directory}"
+        if cache_key in self.path_validation_cache:
+            return self.path_validation_cache[cache_key]
+        
+        result = {
+            'team_name': team_name,
+            'input_directory': input_directory,
+            'is_valid': False,
+            'issues': [],
+            'suggestions': [],
+            'path_info': {}
+        }
+        
+        try:
+            input_path = Path(input_directory)
+            
+            # Record path information
+            result['path_info'] = {
+                'raw_path': input_directory,
+                'resolved_path': str(input_path.resolve()),
+                'absolute_path': str(input_path.absolute()),
+                'is_absolute': input_path.is_absolute(),
+                'current_working_directory': os.getcwd()
+            }
+            
+            # Check if path exists
+            if not input_path.exists():
+                result['issues'].append(f"Input directory does not exist: {input_path}")
+                
+                # Suggest alternatives
+                parent = input_path.parent
+                if parent.exists():
+                    subdirs = [d.name for d in parent.iterdir() if d.is_dir()]
+                    if subdirs:
+                        result['suggestions'].append(f"Available directories in {parent}: {subdirs}")
+                
+                # Check for common path mistakes
+                if 'granite-test-generator' in str(input_path):
+                    corrected = str(input_path).replace('granite-test-generator/', '')
+                    result['suggestions'].append(f"Try removing 'granite-test-generator/' prefix: {corrected}")
+                
+                self.path_validation_cache[cache_key] = result
+                return result
+            
+            # Check if it's a directory
+            if not input_path.is_dir():
+                result['issues'].append(f"Path exists but is not a directory: {input_path}")
+                self.path_validation_cache[cache_key] = result
+                return result
+            
+            # Check for readable files
+            file_types = ['.md', '.txt', '.json']
+            file_counts = {}
+            
+            for file_type in file_types:
+                files = list(input_path.glob(f"*{file_type}"))
+                file_counts[file_type] = len(files)
+            
+            total_files = sum(file_counts.values())
+            result['path_info']['file_counts'] = file_counts
+            result['path_info']['total_files'] = total_files
+            
+            if total_files == 0:
+                result['issues'].append("No readable files found in directory")
+                result['suggestions'].append("Ensure directory contains .md, .txt, or .json files")
+            else:
+                result['is_valid'] = True
+                result['suggestions'].append(f"Found {total_files} files: {file_counts}")
+        
+        except Exception as e:
+            result['issues'].append(f"Path validation error: {e}")
+        
+        self.path_validation_cache[cache_key] = result
+        return result
     
     def _setup_logger(self, log_level):
         """Set up structured logging"""

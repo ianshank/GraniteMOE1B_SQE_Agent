@@ -10,16 +10,59 @@ from pathlib import Path
 # Add the src directory to Python path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-def main():
-    """Main function to run the Granite MoE Test Generator."""
-    print("🚀 Starting Granite MoE Test Generator...")
-    print(f"Python path: {sys.path[0]}")
-    print(f"Working directory: {os.getcwd()}")
+def main() -> None:
+    """Main function to run the Granite MoE Test Generator.
     
-    # TODO: Initialize and run the main system components
-    # This will be implemented as the system components are developed
+    Initializes and runs the complete test case generation workflow using
+    the GraniteTestCaseGenerator from the granite-test-generator package.
     
-    print("✅ Granite MoE Test Generator initialized successfully!")
+    Raises:
+        ImportError: If granite-test-generator components cannot be imported
+        RuntimeError: If system initialization fails
+    """
+    import logging
+    import asyncio
+    
+    # Configure logging for main entry point
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    logger = logging.getLogger(__name__)
+    
+    logger.info("Starting Granite MoE Test Generator")
+    logger.debug(f"Python path: {sys.path[0]}")
+    logger.debug(f"Working directory: {os.getcwd()}")
+    
+    try:
+        # Determine granite-test-generator directory for proper path resolution
+        project_root_override = os.getenv("GRANITE_PROJECT_ROOT")
+        if project_root_override:
+            granite_dir = Path(project_root_override).expanduser()
+        else:
+            granite_dir = Path(__file__).parent / "granite-test-generator"
+
+        granite_dir = granite_dir.resolve()
+        logger.debug("Resolved granite project directory to %s", granite_dir)
+        if not granite_dir.exists():
+            raise RuntimeError(f"Granite test generator directory not found: {granite_dir}")
+
+        os.chdir(granite_dir)
+        logger.info("Changed working directory to: %s", granite_dir)
+        
+        # Import and run the main system
+        from src.main import main as granite_main
+        asyncio.run(granite_main())
+        
+        logger.info("Granite MoE Test Generator completed successfully")
+        
+    except ImportError as e:
+        logger.error(f"Failed to import granite-test-generator components: {e}")
+        logger.error("Ensure you're running from the project root directory")
+        raise
+    except Exception as e:
+        logger.error(f"System execution failed: {e}")
+        raise
 
 if __name__ == "__main__":
     main()

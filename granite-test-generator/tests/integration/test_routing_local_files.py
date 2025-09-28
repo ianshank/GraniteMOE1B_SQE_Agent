@@ -29,7 +29,6 @@ def test_orchestrator_with_local_connector_routes_by_team(tmp_path: Path):
     connector = LocalFileSystemConnector(directory=str(tmp_path), team_name=team_name)
     orch.register_team(TeamConfiguration(team_name=team_name, connector=connector))
 
-    results = asyncio.get_event_loop().run_until_complete(orch.process_all_teams())
+    results = asyncio.run(orch.process_all_teams())
     assert team_name in results
     assert isinstance(results[team_name], list) and len(results[team_name]) == 1
-
