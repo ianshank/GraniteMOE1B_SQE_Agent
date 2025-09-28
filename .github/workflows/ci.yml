@@ -45,7 +45,8 @@ jobs:
         run: |
           coverage run -a -m pytest -q tests || true
           coverage xml -o coverage.xml
-          coverage report -m
+          coverage report -m --fail-under=20
+          coverage html -d htmlcov
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
@@ -54,3 +55,9 @@ jobs:
           path: coverage.xml
           if-no-files-found: error
 
+      - name: Upload HTML coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: htmlcov
+          if-no-files-found: error
