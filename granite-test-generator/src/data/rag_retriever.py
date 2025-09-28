@@ -67,8 +67,12 @@ class SimpleEnsembleRetriever:
         for r_idx, docs in enumerate(docs_per_ret):
             w = self.weights[r_idx] if r_idx < len(self.weights) else 1.0
             for rank, doc in enumerate(docs, start=1):
-                # Use page_content as identity
-                key = getattr(doc, "page_content", str(doc))
+                # Use page_content as identity, else fall back to object id.
+                # Avoid str(obj) because some implementations may return non-unique
+                # representations, which would corrupt RRF fusion.
+                key = getattr(doc, "page_content", None)
+                if key is None:
+                    key = f"obj:{id(doc)}"
                 scores[key] += w / (self.c + rank)
                 if key not in seen:
                     all_docs.append(doc)

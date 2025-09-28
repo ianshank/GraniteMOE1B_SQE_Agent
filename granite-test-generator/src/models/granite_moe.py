@@ -258,7 +258,14 @@ Create a test case for the above requirements.
         """
         import os
         from pathlib import Path
-        from peft import LoraConfig, TaskType
+        # Defer import and provide actionable guidance if missing
+        try:
+            from peft import LoraConfig, TaskType  # type: ignore
+        except Exception as e:  # pragma: no cover - environment dependent
+            raise ImportError(
+                "The 'peft' library is required for offline fine-tuning artifacts. "
+                "Please install it with 'pip install peft'."
+            ) from e
 
         logger = logging.getLogger(__name__)
 
