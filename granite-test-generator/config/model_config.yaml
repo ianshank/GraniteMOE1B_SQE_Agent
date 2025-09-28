@@ -1,0 +1,83 @@
+model_name: "ibm-granite/granite-3.0-1b-a400m-instruct"  
+model_specs:
+  total_parameters: "1.3B"      
+  active_parameters: "400M"     
+  expert_count: 32             
+  embedding_size: 1024          
+  layer_count: 24               
+  context_length: 4096          
+  
+fine_tuning:
+  enabled: true
+  epochs: 3
+  batch_size: 4                 # Can potentially increase due to smaller model
+  learning_rate: 5e-5
+  lora_config:
+    r: 16
+    alpha: 32
+    target_modules: ["experts", "gate", "q_proj", "v_proj"]  # Same targeting
+
+
+rag:
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+  chunk_size: 512
+  chunk_overlap: 50
+  top_k: 5
+
+cag:
+  cache_size: 10000
+  preload_patterns: true
+
+teams:  
+  - name: "ingest_team"
+    connector:
+      type: "github"
+      base_url: "https://your-company.atlassian.net"
+      username: "your-email@company.com"
+      api_token: "your-jira-token"
+      repo_owner: "your-org"
+      repo_name: "ingest-repo"
+      token: "your-github-token"
+    rag_enabled: true
+    cag_enabled: true
+    auto_push: false
+  
+  - name: "assets_team"
+    connector:
+      type: "github"
+      repo_owner: "your-org"
+      repo_name: "assets-repo"
+      token: "your-github-token"
+    rag_enabled: true
+    cag_enabled: true
+    auto_push: false
+  
+  - name: "cms_team"
+    connector:
+      type: "github"
+      repo_owner: "your-org"
+      repo_name: "cms-repo"
+      token: "your-github-token"
+    rag_enabled: true
+    cag_enabled: true
+    auto_push: false
+
+  - name: "playback_team"
+    connector:
+      type: "github"
+      repo_owner: "your-org"
+      repo_name: "playback-repo"
+      token: "your-github-token"
+    rag_enabled: true
+    cag_enabled: true
+    auto_push: false
+
+  - name: "ads_team"
+    connector:
+      type: "github"
+      repo_owner: "your-org"
+      repo_name: "ads-repo"
+      token: "your-github-token"
+    rag_enabled: true
+    cag_enabled: true
+    auto_push: false

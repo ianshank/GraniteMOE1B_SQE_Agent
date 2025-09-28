@@ -1,0 +1,157 @@
+
+graph TB
+    %% Infrastructure Layer
+    subgraph Infrastructure["Infrastructure Layer"]
+        MAC["Mac Mini M-Series<br/>16GB+ Unified Memory"]
+        PYCHARM["PyCharm IDE<br/>Debug & Development"]
+        CONDA["Anaconda Environment<br/>Python 3.10"]
+        MLX["Apple MLX<br/>M-Series Optimization"]
+    end
+
+    %% Data Sources
+    subgraph DataSources["Data Sources"]
+        JIRA["Jira Issues<br/>Requirements & Stories"]
+        GITHUB["GitHub Issues<br/>Feature Requests"]
+        DOCS["Documentation<br/>Technical Specs"]
+        STORIES["User Stories<br/>JSON/CSV Format"]
+    end
+
+    %% Data Processing Layer
+    subgraph DataProcessing["Data Processing Layer"]
+        CHUNKER["Intelligent Chunker<br/>• Semantic Boundaries<br/>• Requirement Parsing<br/>• Story Segmentation"]
+        PROCESSOR["Data Processors<br/>• Multi-format Support<br/>• Team Context<br/>• Metadata Extraction"]
+        VALIDATOR["Schema Validator<br/>• Pydantic Models<br/>• Structure Validation<br/>• Type Checking"]
+    end
+
+    %% Storage & Retrieval Layer
+    subgraph Storage["Storage & Retrieval Layer"]
+        KVCACHE["KV Cache System<br/>• Hash-based Keys<br/>• Tagging Support<br/>• Performance Metrics"]
+        FAISS["FAISS Vectorstore<br/>• Semantic Search<br/>• Dense Embeddings<br/>• Fast Retrieval"]
+        CHROMADB["ChromaDB<br/>• Persistent Storage<br/>• Collection Management<br/>• Metadata Filtering"]
+        EMBEDDING["HuggingFace Embeddings<br/>all-MiniLM-L6-v2"]
+    end
+
+    %% RAG System
+    subgraph RAG["RAG System (Retrieval-Augmented Generation)"]
+        RAGRET["RAG Retriever<br/>• Ensemble Retrieval<br/>• BM25 + Semantic<br/>• Team Context Filter"]
+        BM25["BM25 Retriever<br/>• Keyword Matching<br/>• Statistical Ranking"]
+        ENSEMBLE["Ensemble Retriever<br/>• Weighted Combination<br/>• 70% Semantic + 30% BM25"]
+    end
+
+    %% CAG System
+    subgraph CAG["CAG System (Cache-Augmented Generation)"]
+        CAGCACHE["CAG Cache<br/>• Pattern Recognition<br/>• Team-specific Cache<br/>• Access Frequency"]
+        PATTERNS["Common Patterns<br/>• Login Tests<br/>• API Validation<br/>• Error Handling"]
+        PRELOAD["Pattern Preloader<br/>• Team Optimization<br/>• Frequent Access Cache"]
+    end
+
+    %% Granite 3.0 MoE Model
+    subgraph GraniteMoE["Granite 3.0 1B-A400M"]
+        MODEL["Granite 3.0 Model<br/>• 1.3B Total Parameters<br/>• 800M Active Parameters<br/>• 4096 Context Length"]
+        EXPERTS["40 Expert Networks<br/>• Specialized Sub-networks<br/>• Domain-specific Learning"]
+        ROUTER["Gating Network<br/>• Top-8 Expert Routing<br/>• Load Balancing<br/>• Dropless Tokens"]
+        FINETUNE["LoRA Fine-tuning<br/>• QLoRA for Memory<br/>• Target Expert Layers<br/>• Rank 16, Alpha 32"]
+    end
+
+    %% Agent System
+    subgraph AgentSystem["Agent System"]
+        TESTAGENT["Test Generation Agent<br/>• Multi-tool Coordination<br/>• Workflow Management<br/>• Quality Validation"]
+        TOOLS["Agent Tools<br/>• Requirement Retrieval<br/>• Cache Checking<br/>• Test Generation<br/>• Validation"]
+        QUALITY["Quality Assessment<br/>• Structure Validation<br/>• Completeness Check<br/>• Metrics Calculation"]
+    end
+
+    %% Integration Layer
+    subgraph Integration["Integration Layer"]
+        ORCHESTRATOR["Workflow Orchestrator<br/>• Multi-team Coordination<br/>• Async Processing<br/>• Result Aggregation"]
+        JIRACONN["Jira Connector<br/>• REST API Integration<br/>• Issue Creation<br/>• Metadata Mapping"]
+        GITHUBCONN["GitHub Connector<br/>• GitHub API<br/>• Issue Management<br/>• Markdown Formatting"]
+        TEAMCONFIG["Team Configuration<br/>• Connector Settings<br/>• Processing Rules<br/>• Auto-push Options"]
+    end
+
+    %% Output & Quality
+    subgraph Output["Output & Quality Layer"]
+        TESTCASES["Generated Test Cases<br/>• Structured Format<br/>• Pydantic Schemas<br/>• Team Traceability"]
+        REPORTS["Quality Reports<br/>• Coverage Metrics<br/>• Team Analytics<br/>• Performance Stats"]
+        EXPORT["Export Formats<br/>• JSON Output<br/>• Team-specific Push<br/>• Traceability Links"]
+    end
+
+    %% Debugging & Monitoring
+    subgraph Debug["Debugging & Monitoring"]
+        LOGGER["Debug Logger<br/>• Structured Logging<br/>• Performance Metrics<br/>• Error Tracking"]
+        TESTSUITE["Test Suite<br/>• Unit Tests<br/>• Integration Tests<br/>• Mock Frameworks"]
+        MONITOR["Performance Monitor<br/>• Execution Time<br/>• Memory Usage<br/>• Expert Utilization"]
+    end
+
+    %% Data Flow Connections
+    DataSources --> PROCESSOR
+    PROCESSOR --> CHUNKER
+    CHUNKER --> VALIDATOR
+    VALIDATOR --> KVCACHE
+    VALIDATOR --> FAISS
+    VALIDATOR --> CHROMADB
+
+    %% RAG Flow
+    FAISS --> RAGRET
+    CHROMADB --> RAGRET
+    EMBEDDING --> FAISS
+    RAGRET --> BM25
+    BM25 --> ENSEMBLE
+    ENSEMBLE --> TESTAGENT
+
+    %% CAG Flow
+    KVCACHE --> CAGCACHE
+    PATTERNS --> PRELOAD
+    PRELOAD --> CAGCACHE
+    CAGCACHE --> TESTAGENT
+
+    %% MoE Processing
+    TESTAGENT --> MODEL
+    MODEL --> ROUTER
+    ROUTER --> EXPERTS
+    EXPERTS --> FINETUNE
+    FINETUNE --> TESTAGENT
+
+    %% Agent Workflow
+    TESTAGENT --> TOOLS
+    TOOLS --> QUALITY
+    QUALITY --> ORCHESTRATOR
+
+    %% Integration Flow
+    ORCHESTRATOR --> JIRACONN
+    ORCHESTRATOR --> GITHUBCONN
+    TEAMCONFIG --> ORCHESTRATOR
+    JIRACONN --> TESTCASES
+    GITHUBCONN --> TESTCASES
+
+    %% Output Generation
+    TESTCASES --> REPORTS
+    REPORTS --> EXPORT
+    EXPORT --> DataSources
+
+    %% Monitoring
+    TESTAGENT --> LOGGER
+    MODEL --> MONITOR
+    ORCHESTRATOR --> TESTSUITE
+
+    %% Infrastructure Support
+    MAC --> MLX
+    MLX --> MODEL
+    PYCHARM --> Debug
+    CONDA --> Infrastructure
+
+    %% Styling
+    classDef infrastructure fill:#E8F4FD,stroke:#1E88E5,stroke-width:2px
+    classDef data fill:#F3E5F5,stroke:#8E24AA,stroke-width:2px
+    classDef processing fill:#E8F5E8,stroke:#43A047,stroke-width:2px
+    classDef model fill:#FFF3E0,stroke:#FB8C00,stroke-width:2px
+    classDef agent fill:#FCE4EC,stroke:#E91E63,stroke-width:2px
+    classDef integration fill:#F1F8E9,stroke:#689F38,stroke-width:2px
+    classDef output fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+
+    class Infrastructure,MAC,PYCHARM,CONDA,MLX infrastructure
+    class DataSources,JIRA,GITHUB,DOCS,STORIES data
+    class DataProcessing,CHUNKER,PROCESSOR,VALIDATOR,Storage,KVCACHE,FAISS,CHROMADB,EMBEDDING processing
+    class GraniteMoE,MODEL,EXPERTS,ROUTER,FINETUNE model
+    class AgentSystem,TESTAGENT,TOOLS,QUALITY,RAG,RAGRET,BM25,ENSEMBLE,CAG,CAGCACHE,PATTERNS,PRELOAD agent
+    class Integration,ORCHESTRATOR,JIRACONN,GITHUBCONN,TEAMCONFIG integration
+    class Output,TESTCASES,REPORTS,EXPORT,Debug,LOGGER,TESTSUITE,MONITOR output

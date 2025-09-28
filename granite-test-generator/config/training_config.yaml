@@ -1,0 +1,68 @@
+# Training and fine-tuning configuration for MoE or agent-driven test generation models
+project:
+  name: granite-test-generator
+  version: "3.0"
+  description: >
+    MoE/Agent-based training configuration for test case generation and QA.
+
+model:
+  type: "moe"
+  repo_id: ibm-granite/granite-3-moe-instruct
+  pretrained_weights: ./artifacts/moe_checkpoints/checkpoint-latest.pt
+  save_dir: ./artifacts/moe_checkpoints/
+  tokenizer_name: ibm-granite/granite-3-moe-instruct
+  tokenizer_kwargs:
+    truncation: true
+    padding: max_length
+    max_length: 1024
+
+data:
+  train_file: ./data/testcases/train.jsonl
+  val_file: ./data/testcases/val.jsonl
+  test_file: ./data/testcases/test.jsonl
+  input_format: jsonl
+  requirements_rag: ./data/stories/requirements.jsonl
+  user_stories_dir: ./data/stories/
+  batch_size: 8
+  num_workers: 4
+
+training:
+  epochs: 3
+  steps_per_epoch: 1000
+  eval_steps: 250
+  learning_rate: 2.0e-5
+  lr_scheduler: "cosine"
+  warmup_steps: 100
+  weight_decay: 0.01
+  gradient_clip_val: 1.0
+  device: "cuda"
+  log_interval: 20
+  fp16: true
+
+checkpoints:
+  save_every_steps: 250
+  max_checkpoints: 5
+  keep_best_only: true
+
+early_stopping:
+  enabled: true
+  patience: 2
+  monitor: "val_loss"
+  min_delta: 0.001
+
+evaluation:
+  metrics:
+    - accuracy
+    - f1
+    - coverage
+    - requirements_alignment
+  val_subset_size: 500
+
+logging:
+  project: granite-test-gen
+  run_name: "moe_training"
+  log_dir: ./logs/
+  wandb: true
+
+seed: 42
+

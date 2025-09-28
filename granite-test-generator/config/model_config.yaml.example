@@ -1,0 +1,74 @@
+# Granite Test Generator Configuration Example
+# Copy this file to model_config.yaml and update with your settings
+
+# Model Configuration
+model_name: "ibm-granite/granite-3.0-1b-a400m-instruct"
+embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+
+# Generation Parameters
+generation:
+  max_length: 512
+  temperature: 0.7
+  top_p: 0.9
+  num_return_sequences: 1
+
+# Team Configurations
+teams:
+  # Example Jira Configuration
+  - name: "backend-team"
+    connector:
+      type: "jira"
+      base_url: "https://your-company.atlassian.net"
+      username: "your-email@company.com"
+      api_token: "${JIRA_API_TOKEN}"  # Set as environment variable
+      project_key: "BACKEND"
+    rag_enabled: true
+    cag_enabled: true
+    auto_push: false  # Set to true to automatically push test cases
+    
+  # Example GitHub Configuration  
+  - name: "frontend-team"
+    connector:
+      type: "github"
+      repo_owner: "your-org"
+      repo_name: "frontend-app"
+      token: "${GITHUB_TOKEN}"  # Set as environment variable
+    rag_enabled: true
+    cag_enabled: true
+    auto_push: false
+
+# Cache Configuration
+cache:
+  kv_cache:
+    max_size: 15000
+    cache_dir: "./cache"
+  chromadb:
+    persist_directory: "./chroma_db"
+    collection_name: "requirements"
+
+# Training Configuration (for fine-tuning)
+training:
+  enabled: false
+  output_dir: "./models/fine_tuned_granite"
+  num_epochs: 3
+  batch_size: 4
+  learning_rate: 5e-5
+  warmup_steps: 100
+  evaluation_strategy: "steps"
+  eval_steps: 500
+  save_steps: 1000
+  logging_steps: 100
+
+# Logging Configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "./logs/granite_test_gen.log"
+
+# Performance Configuration
+performance:
+  parallel_teams: true
+  max_concurrent_teams: 5
+  request_timeout: 30  # seconds
+  retry_attempts: 3
+  retry_delay: 2  # seconds

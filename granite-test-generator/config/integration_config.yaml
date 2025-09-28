@@ -1,0 +1,74 @@
+# Configuration for integrating agent modules, MoE models, RAG context, and data interfaces
+project:
+  name: granite-test-generator
+  version: "3.0"
+  description: >
+    Config for integrating test generation and quality assessment agents with MoE model, requirements RAG, and business logic.
+
+agents:
+  test_generation_agent:
+    enabled: true
+    module: src/agents/test_generation_agent.py
+    config:
+      model_type: "moe"
+      max_cases_per_run: 50
+
+  quality_assessment_agent:
+    enabled: true
+    module: src/agents/quality_assessment_agent.py
+    config:
+      scoring_weights:
+        summary: 1
+        input_data: 1
+        steps: 2
+        expected_results: 1
+        coverage: 2
+      min_quality_score: 4.5
+      output_reports: true
+
+moe_model:
+  repo_id: ibm-granite/granite-3-moe-instruct
+  checkpoint_dir: ./artifacts/moe_checkpoints/
+  device: "cuda"
+  precision: "float16"
+  inference_batch_size: 8
+
+rag:
+  enabled: true
+  data_sources:
+    requirements_file: ./data/stories/requirements.jsonl
+    user_stories_dir: ./data/stories/
+    fallback_context: ./data/context/default_context.yaml
+
+qmetry:
+  enabled: true
+  input_testcases_file: ./data/testcases/testcases.jsonl
+  output_scores_file: ./artifacts/assessments/quality_scores.json
+  export_format: "json"
+
+logging:
+  level: INFO
+  log_dir: ./logs/
+  agent_activity_log: true
+
+integration:
+  pipeline_steps:
+    - name: GenerateTestCases
+      agent: test_generation_agent
+      input: rag
+      output: testcases
+    - name: AssessQuality
+      agent: quality_assessment_agent
+      input: testcases
+      output: quality_scores
+
+  orchestration:
+    main_script: src/main.py
+    entrypoint: run_pipeline
+
+paths:
+  config_dir: ./configs/
+  data_dir: ./data/
+  artifacts_dir: ./artifacts/
+  scripts_dir: ./scripts/
+

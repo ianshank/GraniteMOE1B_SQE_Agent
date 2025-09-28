@@ -1,0 +1,11 @@
+model_storage:
+  quantization: "Q4_K_M"           # Balanced quality/size
+  cache_embeddings: true           # Cache for faster loading
+  offload_to_disk: true           # Use disk for inactive parts
+  compression: true                # Compress cached data
+
+storage_paths:
+  model_cache: "./models/"
+  vector_db: "./vectors/"  
+  training_data: "./data/"
+  outputs: "./output/"
