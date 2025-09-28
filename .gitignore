@@ -26,6 +26,8 @@ venv/
 chroma_db/
 output/
 cache/
+runs/
+artifacts/
 
 # Build artifacts
 dist/
