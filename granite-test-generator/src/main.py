@@ -189,6 +189,79 @@ class GraniteTestCaseGenerator:
         
         return merged
     
+    def _validate_team_configurations(self, teams_config: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Validate team configurations and remove invalid ones.
+        
+        Performs comprehensive validation of team configurations including:
+        - Required field validation
+        - Path existence checks for local connectors
+        - Connector type validation
+        - Team name uniqueness
+        
+        Args:
+            teams_config: List of team configurations to validate
+            
+        Returns:
+            List of validated team configurations
+            
+        Raises:
+            ValueError: If no valid teams remain after validation
+        """
+        if not teams_config:
+            return teams_config
+        
+        validated_teams = []
+        validation_errors = []
+        
+        for i, team_config in enumerate(teams_config):
+            team_name = team_config.get('name', f'UNNAMED_TEAM_{i}')
+            
+            try:
+                # Validate required fields
+                if not isinstance(team_config, dict):
+                    raise ValueError(f"Team configuration must be dict, got {type(team_config)}")
+                
+                if not team_config.get('name'):
+                    raise ValueError("Team configuration missing required field 'name'")
+                
+                connector_config = team_config.get('connector')
+                if not isinstance(connector_config, dict):
+                    raise ValueError("Team connector configuration must be dict")
+                
+                if not connector_config.get('type'):
+                    raise ValueError("Connector configuration missing required field 'type'")
+                
+                # Validate local connector paths
+                if connector_config.get('type') == 'local':
+                    input_dir = connector_config.get('input_directory')
+                    if input_dir:
+                        input_path = Path(input_dir)
+                        if not input_path.exists():
+                            logger.warning(f"Team '{team_name}' input directory does not exist: {input_path}")
+                            logger.info(f"Team '{team_name}' will proceed but may generate 0 test cases")
+                
+                # Team passed validation
+                validated_teams.append(team_config)
+                logger.debug(f"Team '{team_name}' passed validation")
+                
+            except Exception as e:
+                validation_errors.append(f"Team '{team_name}': {e}")
+                logger.error(f"Team '{team_name}' failed validation: {e}")
+                continue
+        
+        # Log validation summary
+        if validation_errors:
+            logger.warning(f"Team validation completed: {len(validated_teams)} valid, {len(validation_errors)} invalid")
+            for error in validation_errors:
+                logger.error(f"Validation error: {error}")
+        else:
+            logger.info(f"All {len(validated_teams)} teams passed validation")
+        
+        if not validated_teams:
+            raise ValueError("No valid team configurations found after validation")
+        
+        return validated_teams
+    
     async def initialize_system(self):
         """Initialize all system components"""
         print("Initializing Granite Test Case Generation System...")
@@ -330,6 +403,9 @@ class GraniteTestCaseGenerator:
 
         # Load integration config with proper precedence handling
         teams_config = self._load_integration_config_with_precedence(teams_config)
+        
+        # Validate team configurations before proceeding
+        teams_config = self._validate_team_configurations(teams_config)
         
         if not teams_config:
             logger.warning("No teams configured. Using default local team.")

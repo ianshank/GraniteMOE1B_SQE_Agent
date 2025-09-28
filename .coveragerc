@@ -11,20 +11,33 @@ omit =
     # Virtual environments
     */.venv/*
     */venv/*
-    # Temporary files and dynamic modules
+    */.venv311/*
+    # Temporary files and dynamic modules (comprehensive patterns)
     */tmp/*
     */_remote_module_*
     */tmpaf76mqvx/*
+    */tmp*/*
+    */_tmp*
     # Cache and build artifacts
     */__pycache__/*
     */build/*
     */dist/*
     */.pytest_cache/*
-    # External dependencies
+    */cache/*
+    */chroma_db/*
+    # External dependencies and dynamic modules
     */site-packages/*
-    # MLX and other dynamic imports that create temporary modules
     */mlx_lm/*
     */transformers/*
+    */huggingface_hub/*
+    */torch/*
+    # Dynamic Python modules created by MLX/transformers
+    */_remote_module_*.py
+    */remote_module_*.py
+    */*_remote_module_*.py
+    # Any temporary scriptable modules
+    */*_non_scriptable.py
+    */non_scriptable_*.py
 
 [report]
 # Ignore errors from missing source files (temporary/dynamic modules)
