@@ -1,0 +1,35 @@
+# Local-only integration configuration using YAML anchors for DRY principle
+# This configuration forces all teams to use LocalFileSystemConnector
+
+# YAML anchors for reusable configuration blocks
+default_local_connector: &local_connector
+  type: "local"
+  input_directory: "data/user_stories"
+  output_directory: "output"
+
+default_team_settings: &team_settings
+  rag_enabled: true
+  cag_enabled: true
+  auto_push: false
+
+# Team configurations using anchors to eliminate duplication
+teams:
+  - name: "ads_team"
+    connector: *local_connector
+    <<: *team_settings
+
+  - name: "ast_team"
+    connector: *local_connector
+    <<: *team_settings
+
+  - name: "cms_team"
+    connector: *local_connector
+    <<: *team_settings
+
+  - name: "ing_team"
+    connector: *local_connector
+    <<: *team_settings
+
+  - name: "plb_team"
+    connector: *local_connector
+    <<: *team_settings

@@ -30,7 +30,7 @@ def test_orchestrator_e2e_minimal():
     orch = WorkflowOrchestrator(StubAgent())
     orch.register_team(TeamConfiguration(team_name='teamA', connector=StubConnector(), auto_push=True))
 
-    results = asyncio.get_event_loop().run_until_complete(orch.process_all_teams())
+    results = asyncio.run(orch.process_all_teams())
     assert 'teamA' in results
     assert isinstance(results['teamA'], list)
     assert len(results['teamA']) == 1

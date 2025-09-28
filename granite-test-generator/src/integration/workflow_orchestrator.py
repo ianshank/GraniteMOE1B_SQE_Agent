@@ -22,11 +22,14 @@ class TeamConfiguration:
 class WorkflowOrchestrator:
     """Orchestrates test case generation workflow across multiple teams"""
     
-    def __init__(self, test_generation_agent: 'TestGenerationAgent'):
+    def __init__(self, test_generation_agent: 'TestGenerationAgent', *, local_only: bool = False):
         self.agent = test_generation_agent
         self.team_configs: Dict[str, TeamConfiguration] = {}
         self.results_cache: Dict[str, List['TestCase']] = {}
+        self.local_only = local_only
         logger.info("WorkflowOrchestrator initialized.")
+        if self.local_only:
+            logger.info("WorkflowOrchestrator running in local-only connector mode.")
         
     @staticmethod
     def create_connector(connector_config: Dict[str, Any]) -> 'TeamConnector':
@@ -133,7 +136,32 @@ class WorkflowOrchestrator:
         if connector_config.get('type', '').lower() == 'local' and 'team_name' not in connector_config:
             connector_config['team_name'] = team_config['name']
             
-        connector = self.create_connector(connector_config)
+        if self.local_only:
+            from src.integration.team_connectors import LocalFileSystemConnector  # Lazy import to avoid cycles
+
+            input_directory = (
+                connector_config.get('input_directory')
+                or connector_config.get('path')
+                or f"data/requirements/{team_config['name']}"
+            )
+            output_directory = connector_config.get('output_directory') or connector_config.get('output') or 'output'
+            file_types = connector_config.get('file_types')
+
+            logger.debug(
+                "Local-only mode active; overriding connector for team '%s' with LocalFileSystemConnector (input=%s, output=%s)",
+                team_config['name'],
+                input_directory,
+                output_directory,
+            )
+
+            connector = LocalFileSystemConnector(
+                input_directory=input_directory,
+                team_name=team_config['name'],
+                output_directory=output_directory,
+                file_types=file_types,
+            )
+        else:
+            connector = self.create_connector(connector_config)
         
         # Create team configuration
         return TeamConfiguration(
