@@ -27,6 +27,7 @@ class GraniteTestCaseGenerator:
             config_dict: Configuration dictionary (overrides config_path if provided)
         """
         self.config = self._load_config(config_path, config_dict)
+        self.local_only_mode = self._local_only_mode_enabled()
         self.components = {}
         
     def _load_config(self, config_path: str, config_dict: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -58,6 +59,11 @@ class GraniteTestCaseGenerator:
         except FileNotFoundError:
             logger.warning(f"Configuration file not found: {config_path}")
             return {}
+
+    def _local_only_mode_enabled(self) -> bool:
+        """Return True when local-only connector mode is requested via environment."""
+        flag = os.getenv("GRANITE_LOCAL_ONLY", "")
+        return flag.strip().lower() in {"1", "true", "yes", "on"}
     
     async def initialize_system(self):
         """Initialize all system components"""
@@ -81,7 +87,10 @@ class GraniteTestCaseGenerator:
         )
         
         # Initialize workflow orchestrator
-        self.components['orchestrator'] = WorkflowOrchestrator(self.components['test_agent'])
+        self.components['orchestrator'] = WorkflowOrchestrator(
+            self.components['test_agent'],
+            local_only=self.local_only_mode,
+        )
         
         print("System initialization complete!")
     
@@ -191,6 +200,9 @@ class GraniteTestCaseGenerator:
         - local: LocalFileSystem connector for teams using local files
         """
         teams_config = list(self.config.get('teams', []) or [])
+
+        if self.local_only_mode:
+            logger.warning("GRANITE_LOCAL_ONLY enabled; forcing LocalFileSystemConnector for all teams.")
 
         # Optionally merge integration config file specified via env var
         integ_path = os.getenv("INTEGRATION_CONFIG_PATH")

@@ -74,7 +74,49 @@ def orchestrator(mock_agent):
 
 class TestWorkflowOrchestrator:
     """Unit tests for WorkflowOrchestrator"""
-    
+
+    def test_create_team_configuration_forces_local_connector_when_flag_enabled(self, mock_agent, tmp_path):
+        """Local-only mode should override remote connectors with LocalFileSystemConnector."""
+
+        orchestrator = WorkflowOrchestrator(mock_agent, local_only=True)
+        team_cfg = {
+            "name": "ads_team",
+            "connector": {
+                "type": "github",
+                "repo_owner": "o",
+                "repo_name": "r",
+                "token": "x",
+                "input_directory": str(tmp_path),
+            },
+        }
+
+        config = orchestrator.create_team_configuration(team_cfg)
+        from src.integration.team_connectors import LocalFileSystemConnector
+
+        assert isinstance(config.connector, LocalFileSystemConnector)
+        assert config.connector.team_name == "ads_team"
+        assert str(config.connector.input_directory) == str(tmp_path)
+
+    def test_create_team_configuration_local_only_uses_default_input_when_missing(self, mock_agent):
+        orchestrator = WorkflowOrchestrator(mock_agent, local_only=True)
+        team_cfg = {
+            "name": "cms_team",
+            "connector": {
+                "type": "jira",
+                "base_url": "https://example.com",
+                "username": "user",
+                "api_token": "token",
+                "project_key": "CMS",
+            },
+        }
+
+        config = orchestrator.create_team_configuration(team_cfg)
+        from src.integration.team_connectors import LocalFileSystemConnector
+
+        assert isinstance(config.connector, LocalFileSystemConnector)
+        assert config.connector.team_name == "cms_team"
+        assert str(config.connector.input_directory) == "data/requirements/cms_team"
+
     def test_initialization(self, mock_agent):
         """Test orchestrator initialization"""
         orchestrator = WorkflowOrchestrator(mock_agent)
