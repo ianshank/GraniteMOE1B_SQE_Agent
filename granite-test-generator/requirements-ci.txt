@@ -12,3 +12,6 @@ sentence-transformers
 chromadb
 rank-bm25
 langchain-huggingface
+
+# CSV processing for data processors tests
+pandas
