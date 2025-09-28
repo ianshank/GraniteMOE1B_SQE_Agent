@@ -124,6 +124,13 @@ class JiraConnector(TeamConnector):
             logger.info(f"Successfully fetched {len(requirements)} requirements from Jira.")
             return requirements
         except requests.exceptions.RequestException as e:
+            status = getattr(getattr(e, 'response', None), 'status_code', None)
+            if status == 401:
+                msg = (
+                    "Unauthorized (401) when fetching from Jira. Verify username/API token and permissions."
+                )
+                logger.error(msg)
+                raise Exception(msg) from e
             logger.error(f"Failed to fetch from Jira: {e}")
             raise Exception(f"Failed to fetch from Jira: {e}")
         except json.JSONDecodeError as e:
@@ -225,6 +232,13 @@ class GitHubConnector(TeamConnector):
             logger.info(f"Successfully fetched {len(requirements)} requirements from GitHub.")
             return requirements
         except requests.exceptions.RequestException as e:
+            status = getattr(getattr(e, 'response', None), 'status_code', None)
+            if status == 401:
+                msg = (
+                    "Unauthorized (401) when fetching from GitHub. Ensure the token is valid and has appropriate scopes (e.g., 'repo')."
+                )
+                logger.error(msg)
+                raise Exception(msg) from e
             logger.error(f"Failed to fetch from GitHub Issues: {e}")
             raise Exception(f"Failed to fetch from GitHub: {e}")
         except json.JSONDecodeError as e:
