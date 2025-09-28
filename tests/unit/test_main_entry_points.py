@@ -5,6 +5,7 @@ Tests the main.py entry points for proper error handling, logging,
 and workflow execution without generating test cases.
 """
 
+import importlib
 import os
 import sys
 from pathlib import Path
@@ -31,13 +32,14 @@ class TestRootMainEntryPoint:
             if str(root_path) in sys.path:
                 sys.path.remove(str(root_path))
     
-    def test_main_handles_missing_granite_directory(self):
+    def test_main_handles_missing_granite_directory(self, caplog):
         """Test main handles missing granite-test-generator directory gracefully."""
         root_path = Path(__file__).parent.parent.parent
         sys.path.insert(0, str(root_path))
         
         try:
             import main
+            importlib.reload(main)
             
             # Mock Path to simulate missing directory
             with patch.dict(
@@ -48,20 +50,25 @@ class TestRootMainEntryPoint:
                 },
                 clear=False,
             ):
-
-                with pytest.raises(RuntimeError, match="Granite test generator directory not found"):
-                    main.main()
+                with caplog.at_level("DEBUG"):
+                    with pytest.raises(RuntimeError, match="Granite test generator directory not found"):
+                        main.main()
+                assert any(
+                    "Resolved granite project directory" in message and "nonexistent" in message
+                    for message in caplog.messages
+                )
         finally:
             if str(root_path) in sys.path:
                 sys.path.remove(str(root_path))
-    
-    def test_main_handles_import_errors_gracefully(self):
+
+    def test_main_handles_import_errors_gracefully(self, caplog):
         """Test main handles import errors with proper logging."""
         root_path = Path(__file__).parent.parent.parent
         sys.path.insert(0, str(root_path))
         
         try:
             import main
+            importlib.reload(main)
             
             # Mock os.chdir and import to simulate import failure
             with patch.dict(os.environ, {"GRANITE_LOCAL_ONLY": "true"}, clear=False), \
@@ -75,8 +82,9 @@ class TestRootMainEntryPoint:
 
                 mock_run.side_effect = _raise_module_not_found
                 
-                with pytest.raises(ImportError, match="Module not found"):
-                    main.main()
+                with caplog.at_level("INFO"):
+                    with pytest.raises(ImportError, match="Module not found"):
+                        main.main()
         finally:
             if str(root_path) in sys.path:
                 sys.path.remove(str(root_path))
@@ -127,13 +135,14 @@ class TestGraniteMainEntryPoint:
 class TestMainEntryPointIntegration:
     """Integration tests for main entry point behavior."""
     
-    def test_working_directory_changes_correctly(self):
+    def test_working_directory_changes_correctly(self, caplog):
         """Test that main entry point changes to correct working directory."""
         root_path = Path(__file__).parent.parent.parent
         sys.path.insert(0, str(root_path))
         
         try:
             import main
+            importlib.reload(main)
             
             original_cwd = os.getcwd()
             expected_granite_dir = root_path / "granite-test-generator"
@@ -150,8 +159,9 @@ class TestMainEntryPointIntegration:
                  patch('asyncio.run', new=lambda coro: coro.close() if hasattr(coro, 'close') else None), \
                  patch('main.os.chdir') as mock_chdir:
                 
-                # Should not raise exception
-                main.main()
+                with caplog.at_level("DEBUG"):
+                    # Should not raise exception
+                    main.main()
                 
                 # Verify chdir was called with correct directory
                 mock_chdir.assert_called_once_with(expected_granite_dir)
@@ -159,14 +169,15 @@ class TestMainEntryPointIntegration:
         finally:
             if str(root_path) in sys.path:
                 sys.path.remove(str(root_path))
-    
-    def test_logging_configuration(self):
+
+    def test_logging_configuration(self, caplog):
         """Test that logging is properly configured in main entry points."""
         root_path = Path(__file__).parent.parent.parent
         sys.path.insert(0, str(root_path))
         
         try:
             import main
+            importlib.reload(main)
             
             # Mock logging configuration
             with patch.dict(
@@ -180,7 +191,8 @@ class TestMainEntryPointIntegration:
                  patch('logging.basicConfig') as mock_logging, \
                  patch('asyncio.run', new=lambda coro: coro.close() if hasattr(coro, 'close') else None):
 
-                main.main()
+                with caplog.at_level("INFO"):
+                    main.main()
 
                 # Verify logging was configured
                 mock_logging.assert_called_once()
@@ -192,7 +204,6 @@ class TestMainEntryPointIntegration:
         finally:
             if str(root_path) in sys.path:
                 sys.path.remove(str(root_path))
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
