@@ -4,7 +4,20 @@ from langchain.schema import AgentAction, AgentFinish
 from typing import List, Dict, Any, Optional
 import asyncio
 from typing import TYPE_CHECKING
-from mlx_lm import generate
+from src.models.test_case_schemas import (
+    TestCase,
+    TestStep,
+    TestCasePriority,
+    TestCaseType,
+)
+# Optional MLX language model
+try:
+    from mlx_lm import generate  # type: ignore
+    _MLX_AVAILABLE = True
+except Exception:  # pragma: no cover
+    _MLX_AVAILABLE = False
+    def generate(*args, **kwargs):  # type: ignore
+        return "[TEST_CASE][SUMMARY]fallback[/SUMMARY][INPUT_DATA]{}[/INPUT_DATA][STEPS]1. step -> ok[/STEPS][EXPECTED]ok[/EXPECTED][/TEST_CASE]"
 
 if TYPE_CHECKING:
     from src.models.granite_moe import GraniteMoETrainer
@@ -62,10 +75,13 @@ class TestGenerationAgent:
         return "No cached response found"
     
     def _generate_test_case(self, requirement: str) -> str:
-        """Optimized generation for 1B model - faster inference"""
-        if not getattr(self.granite_model, 'mlx_model', None):
+        """Generate test case using MLX model or fallback templating."""
+        if not getattr(self.granite_model, 'mlx_model', None) or not getattr(self.granite_model, 'mlx_tokenizer', None):
             self.granite_model.load_model_for_inference()
-        
+            # If still not available, fallback
+            if not getattr(self.granite_model, 'mlx_model', None) or not getattr(self.granite_model, 'mlx_tokenizer', None):
+                return self._template_generate(requirement)
+
         prompt = f"""<|system|>
 You are a software quality engineer. Create a detailed test case for the given requirement.
 
@@ -74,17 +90,77 @@ Requirement: {requirement}
 Create a comprehensive test case with summary, input data, steps, and expected results.
 
 <|assistant|>"""
+
+        try:
+            response = generate(
+                self.granite_model.mlx_model,
+                self.granite_model.mlx_tokenizer,
+                prompt=prompt,
+                max_tokens=384,
+                temperature=0.6
+            )
+            return response
+        except TypeError:
+            # Older mlx_lm signature fallback
+            response = generate(
+                self.granite_model.mlx_model,
+                self.granite_model.mlx_tokenizer,
+                prompt=prompt,
+                max_tokens=384
+            )
+            return response
+        except Exception:
+            # Final fallback
+            return self._template_generate(requirement)
+
+    def _template_generate(self, requirement: str) -> str:
+        """Lightweight, deterministic template-based generation when model is unavailable."""
+        import textwrap, re
+        # Heuristic summary extraction
+        summary_line = next((ln.strip() for ln in requirement.split("\n") if ln.strip()), requirement)[:120]
+
+        # Derive domain-specific steps
+        req_lower = requirement.lower()
+        if any(k in req_lower for k in ["login", "authenticate", "sign in"]):
+            raw_steps = [
+                "Open login page -> Page loads",
+                "Enter valid credentials -> Credentials accepted",
+                "Submit form -> User redirected to dashboard",
+                "Verify session cookie -> Session established"
+            ]
+        elif any(k in req_lower for k in ["upload", "ingest"]):
+            raw_steps = [
+                "Prepare sample file -> File ready",
+                "Upload file -> Server responds 202",
+                "Poll status -> Processing completes",
+                "Validate stored object -> MD5 matches"
+            ]
+        else:
+            raw_steps = [
+                "Set up pre-conditions -> Environment ready",
+                "Execute primary action -> Action succeeds",
+                "Observe output -> Output matches requirement",
+                "Clean up data -> State restored"
+            ]
+
+        steps_block = "\n".join([f"{i+1}. {s}" for i, s in enumerate(raw_steps)])
+
+        return textwrap.dedent(f"""
+            [TEST_CASE]
+            [SUMMARY]{summary_line}[/SUMMARY]
+
+            [INPUT_DATA]
+            {{}}
+            [/INPUT_DATA]
+
+            [STEPS]
+            {steps_block}
+            [/STEPS]
+
+            [EXPECTED]System should satisfy the requirement without errors[/EXPECTED]
+            [/TEST_CASE]
+        """).strip()
         
-        response = generate(
-            self.granite_model.mlx_model,
-            self.granite_model.mlx_tokenizer,
-            prompt=prompt,
-            max_tokens=384,
-            temp=0.6
-        )
-        
-        return response
-    
     def _validate_test_case(self, test_case_text: str) -> str:
         """Tool function to validate test case structure"""
         required_sections = ['summary', 'steps', 'expected']
@@ -157,43 +233,47 @@ Create a comprehensive test case with summary, input data, steps, and expected r
     
     def _parse_generated_test_case(self, generated_text: str, team_name: str) -> 'TestCase':
         """Parse generated text into structured TestCase object"""
-        # Implementation would parse the structured output
-        # A simplified version
-        import re
-        
-        summary_match = re.search(r'\[SUMMARY\](.*?)\[/SUMMARY\]', generated_text, re.DOTALL)
-        steps_match = re.search(r'\[STEPS\](.*?)\[/STEPS\]', generated_text, re.DOTALL)
-        expected_match = re.search(r'\[EXPECTED\](.*?)\[/EXPECTED\]', generated_text, re.DOTALL)
-        
-        summary = summary_match.group(1).strip() if summary_match else "Generated test case"
-        steps_text = steps_match.group(1).strip() if steps_match else ""
-        expected = expected_match.group(1).strip() if expected_match else "System should work as expected"
-        
-        # Parse steps
-        steps = []
-        step_lines = steps_text.split('\n')
-        for i, line in enumerate(step_lines, 1):
-            if line.strip():
-                if '->' in line:
-                    action, expected_result = line.split('->', 1)
-                    steps.append(TestStep(
-                        step_number=i,
-                        action=action.strip(),
-                        expected_result=expected_result.strip()
-                    ))
-                else:
-                    steps.append(TestStep(
-                        step_number=i,
-                        action=line.strip(),
-                        expected_result="Step should complete successfully"
-                    ))
-        
+        import re, hashlib, json
+        # 1. Extract tagged sections robustly (case-insensitive, multiline)
+        def _extract(tag: str) -> Optional[str]:
+            match = re.search(fr"\[{tag}\](.*?)\[/{tag}\]", generated_text, re.IGNORECASE | re.DOTALL)
+            return match.group(1).strip() if match else None
+
+        summary = _extract("SUMMARY") or "Auto-generated test case"
+        expected = _extract("EXPECTED") or "System should fulfill the requirement"
+        steps_raw = _extract("STEPS") or ""
+        input_raw = _extract("INPUT_DATA") or "{}"
+
+        # 2. Parse steps, tolerate missing arrows
+        steps: List[TestStep] = []
+        for idx, line in enumerate([ln.strip() for ln in steps_raw.splitlines() if ln.strip()], start=1):
+            if "->" in line:
+                action, exp = [p.strip() for p in line.split("->", 1)]
+            else:
+                action, exp = line, "Step should succeed"
+            steps.append(TestStep(step_number=idx, action=action, expected_result=exp))
+
+        if not steps:
+            # Guarantee at least one step
+            steps.append(TestStep(step_number=1, action="Execute scenario", expected_result="Requirement met"))
+
+        # 3. Parse input data JSON if present
+        try:
+            input_data = json.loads(input_raw) if input_raw else {}
+        except json.JSONDecodeError:
+            input_data = {"raw": input_raw}
+
+        # 4. Generate deterministic yet unique ID
+        hash_src = f"{summary}{expected}{len(steps)}{team_name}"
+        uid = hashlib.md5(hash_src.encode()).hexdigest()[:8]
+
         return TestCase(
-            id=f"{team_name}_{len(steps)}_{hash(summary) % 1000}",
+            id=f"{team_name}_{uid}",
             summary=summary,
             priority=TestCasePriority.MEDIUM,
             test_type=TestCaseType.FUNCTIONAL,
             steps=steps,
             expected_results=expected,
+            input_data=input_data,
             team_context=team_name
         )
