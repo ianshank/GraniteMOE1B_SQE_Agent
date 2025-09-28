@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.models.test_case_schemas import TestCase
 import json
-import pandas as pd
 from pathlib import Path
 
 class TestCaseDataProcessor:
@@ -45,17 +44,27 @@ class TestCaseDataProcessor:
             with open(stories_path, 'r') as f:
                 stories_data = json.load(f)
         elif stories_path.suffix == '.csv':
+            try:
+                import pandas as pd  # type: ignore
+            except Exception as e:
+                raise ImportError(
+                    "Reading CSV user stories requires 'pandas'. Install it or provide a JSON file."
+                ) from e
             stories_data = pd.read_csv(stories_path).to_dict('records')
         else:
             raise ValueError("Supported formats: JSON, CSV")
         
         for story in stories_data:
             story_text = story.get('story', '') or story.get('description', '')
+            # Coalesce nulls and missing values to sane defaults
+            team_val = story.get('team') or 'unknown'
+            priority_val = story.get('priority') or 'medium'
+            epic_val = story.get('epic') or ''
             metadata = {
                 'story_id': story.get('id', ''),
-                'team': story.get('team', 'unknown'),
-                'priority': story.get('priority', 'medium'),
-                'epic': story.get('epic', '')
+                'team': team_val,
+                'priority': priority_val,
+                'epic': epic_val
             }
             
             chunks = self.chunker.chunk_user_stories(story_text, metadata)
@@ -112,3 +121,34 @@ class TestCaseDataProcessor:
                 }
             },
         ]
+
+    def _select_template(self, requirement: str, templates: List[Dict]) -> Dict:
+        """Pick the best matching template based on keywords in requirement."""
+        req_lower = requirement.lower()
+        for t in templates:
+            if any(keyword in req_lower for keyword in t['pattern']):
+                return t
+        return templates[0]
+
+    def _generate_from_template(self, template: Dict, requirement: str, team_context: str) -> 'TestCase':
+        """Create a minimal TestCase from a template and requirement text."""
+        from src.models.test_case_schemas import TestCase, TestStep, TestCasePriority, TestCaseType
+        steps = []
+        for idx, step_text in enumerate(template['template']['steps'], start=1):
+            # Heuristic: if '->' present, split into action and expected
+            if '->' in step_text:
+                action, expected = step_text.split('->', 1)
+                steps.append(TestStep(step_number=idx, action=action.strip(), expected_result=expected.strip()))
+            else:
+                steps.append(TestStep(step_number=idx, action=step_text, expected_result="Step completes successfully"))
+        summary = template['template']['summary'].format(functionality=template['type'])
+        return TestCase(
+            id=f"synthetic_{abs(hash(requirement)) % 10_000}",
+            summary=summary,
+            priority=TestCasePriority.MEDIUM,
+            test_type=TestCaseType.FUNCTIONAL,
+            steps=steps,
+            expected_results=template['template']['expected'],
+            input_data={},
+            team_context=team_context,
+        )
