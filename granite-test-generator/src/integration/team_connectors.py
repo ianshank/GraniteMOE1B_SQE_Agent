@@ -65,8 +65,16 @@ class JiraConnector(TeamConnector):
             logger.info(f"Successfully fetched {len(requirements)} requirements from Jira.")
             return requirements
         except requests.exceptions.RequestException as e:
-            logger.error(f"Failed to fetch from Jira: {e}")
-            raise Exception(f"Failed to fetch from Jira: {e}")
+            # Provide actionable guidance for common auth failures
+            status = getattr(getattr(e, 'response', None), 'status_code', None)
+            if status == 401:
+                detail = "Unauthorized (401): API token invalid or missing"
+            elif status == 403:
+                detail = "Forbidden (403)"
+            else:
+                detail = str(e)
+            logger.error(f"Failed to fetch from Jira: {detail}")
+            raise Exception(f"Failed to fetch from Jira: {detail}")
         except json.JSONDecodeError as e:
             logger.error(f"Failed to decode JSON response from Jira: {e}")
             raise Exception(f"Invalid JSON response from Jira: {e}")
@@ -181,14 +189,21 @@ class GitHubConnector(TeamConnector):
             logger.info(f"Successfully fetched {len(requirements)} requirements from GitHub.")
             return requirements
         except requests.exceptions.RequestException as e:
+            status = getattr(getattr(e, 'response', None), 'status_code', None)
+            if status == 401:
+                detail = "Unauthorized (401): token invalid or missing"
+            elif status == 403:
+                detail = "Forbidden (403)"
+            else:
+                detail = str(e)
             logger.error(
-                f"Failed to fetch from GitHub Issues for repo {self.repo_owner}/{self.repo_name}: {e}"
+                f"Failed to fetch from GitHub Issues for repo {self.repo_owner}/{self.repo_name}: {detail}"
             )
             # Avoid leaking tokens
             logger.debug(f"Request URL: {issues_url}, Headers: {self._safe_headers()}, Params: {params}")
             if 'response' in dir(e) and getattr(e.response, 'text', None):
                 logger.debug(f"Response body: {e.response.text[:500]}")
-            raise Exception(f"Failed to fetch from GitHub repo {self.repo_owner}/{self.repo_name}: {e}")
+            raise Exception(f"Failed to fetch from GitHub repo {self.repo_owner}/{self.repo_name}: {detail}")
         except json.JSONDecodeError as e:
             logger.error(f"Failed to decode JSON response from GitHub repo {self.repo_owner}/{self.repo_name}: {e}")
             raise Exception(f"Invalid JSON response from GitHub repo {self.repo_owner}/{self.repo_name}: {e}")
@@ -269,10 +284,11 @@ class LocalFileSystemConnector(TeamConnector):
     """
     
     def __init__(self, 
-                 input_directory: str, 
-                 team_name: str, 
+                 input_directory: Optional[str] = None,
+                 team_name: str = "default",
                  output_directory: Optional[str] = None,
-                 file_types: Optional[List[str]] = None):
+                 file_types: Optional[List[str]] = None,
+                 directory: Optional[str] = None):
         """Initialize the LocalFileSystemConnector.
         
         Args:
@@ -281,7 +297,11 @@ class LocalFileSystemConnector(TeamConnector):
             output_directory: Path to directory where test cases will be written (defaults to 'output/{team_name}')
             file_types: List of file extensions to process (default: ['.md', '.txt', '.json'])
         """
-        self.input_directory = Path(input_directory)
+        # Accept either input_directory or directory (alias used by some callers/tests)
+        base_dir = input_directory or directory
+        if not base_dir:
+            raise ValueError("input_directory or directory must be provided")
+        self.input_directory = Path(base_dir)
         self.team_name = team_name
         self.output_directory = Path(output_directory) if output_directory else Path(f"output/{team_name}")
         self.file_types = file_types or [".md", ".txt", ".json"]
@@ -412,7 +432,7 @@ class LocalFileSystemConnector(TeamConnector):
                                 data = json.loads(content)
                                 # Skip nested collections by default during directory scans
                                 if isinstance(data, dict) and any(
-                                    isinstance(v, list) and v and isinstance(v[0], dict)
+                                    isinstance(v, list) and len(v) > 0 and isinstance(v[0], dict)
                                     for v in data.values()
                                 ):
                                     logger.debug(
@@ -424,7 +444,7 @@ class LocalFileSystemConnector(TeamConnector):
                                 pass
                     
                     # Process as individual file
-                    file_id = file_path.stem
+                    file_id = file_path.name
                     title = self._extract_title(content) or file_id
                     priority = self._extract_priority(content) or 'medium'
                     
@@ -479,7 +499,7 @@ class LocalFileSystemConnector(TeamConnector):
                         description = item.get('description', '')
                         if isinstance(description, dict):
                             # Handle nested description objects by converting to string
-                            description = json.dumps(description, indent=2)
+                            description = json.dumps(description)
                             
                         req_data = {
                             'id': str(req_id),
@@ -497,9 +517,10 @@ class LocalFileSystemConnector(TeamConnector):
                         }
                         requirements.append(req_data)
                         
-            # Handle object with nested arrays
+            # Handle object with nested arrays or a single requirement object
             elif isinstance(data, dict):
                 # Look for arrays in the object that might contain requirements
+                found_nested = False
                 for key, value in data.items():
                     if isinstance(value, list) and len(value) > 0 and isinstance(value[0], dict):
                         for i, item in enumerate(value):
@@ -522,6 +543,29 @@ class LocalFileSystemConnector(TeamConnector):
                                     }
                                 }
                                 requirements.append(req_data)
+                                found_nested = True
+                # If not nested arrays, treat the dict itself as a single requirement when fields present
+                if not found_nested and any(k in data for k in ('summary', 'title', 'description')):
+                    req_id = data.get('id', file_path.stem)
+                    summary = data.get('summary', data.get('title', file_path.stem))
+                    description = data.get('description', '')
+                    if isinstance(description, dict):
+                        description = json.dumps(description)
+                    req_data = {
+                        'id': str(req_id),
+                        'summary': summary,
+                        'description': description,
+                        'type': data.get('type', 'Requirement'),
+                        'priority': data.get('priority', 'medium').lower(),
+                        'team': self.team_name,
+                        'source': {
+                            'system': 'file',
+                            'source_id': f"{file_path.stem}_{req_id}",
+                            'url': None,
+                            'path': str(file_path)
+                        }
+                    }
+                    requirements.append(req_data)
             
             if requirements:
                 logger.debug(f"Extracted {len(requirements)} requirements from JSON file: {file_path}")
@@ -553,8 +597,11 @@ class LocalFileSystemConnector(TeamConnector):
         success = False
         
         try:
-            # Convert test cases to dictionaries
-            test_cases_dict = [tc.dict() for tc in test_cases]
+            # Convert test cases to dictionaries (Pydantic v2+ compatible)
+            test_cases_dict = [
+                (tc.model_dump() if hasattr(tc, 'model_dump') else tc.dict())
+                for tc in test_cases
+            ]
             
             # Write to file
             with open(str(output_file), 'w', encoding='utf-8') as f:

@@ -110,19 +110,20 @@ class GraniteTestCaseGenerator:
             requirements_docs = processor.process_requirements_files(str(requirements_path))
             logger.info(f"Processed {len(requirements_docs)} requirement documents from {requirements_path}")
             print(f"Processed {len(requirements_docs)} requirement documents")
-            
             # Index in RAG system if RAG is enabled
-            if self.config.get('rag', {}).get('enabled', True):
+            if self.config.get('rag', {}).get('enabled', True) and requirements_docs:
                 from src.utils.chunking import DocumentChunk
                 chunks = [DocumentChunk(content=content, metadata=metadata, 
                                       chunk_id=f"req_{i}", source_type='requirements',
                                       team_context=metadata.get('team', 'default'))
                          for i, (content, metadata) in enumerate(requirements_docs)]
-                
                 self.components['rag_retriever'].index_documents(chunks)
                 logger.info(f"Indexed {len(chunks)} document chunks in RAG system")
         else:
             logger.warning(f"Requirements directory not found: {requirements_path}")
+
+        # Persist whether we have any local requirements data for later decisions
+        self.components['has_requirements'] = bool(requirements_docs)
         
         # Process user stories if available
         user_stories = []
@@ -172,10 +173,11 @@ class GraniteTestCaseGenerator:
         
         print("Starting model fine-tuning...")
         
-        # This function is kept as a stub for future implementation
-        # with real training data from external sources only
+        # This function is kept as a stub for future implementation.
+        # Fine-tuning should only be performed with real training data obtained from external
+        # sources, which should be placed in the data/training directory.
         logger.warning("Fine-tuning with synthetic test cases has been disabled.")
-        logger.info("To use fine-tuning, place test cases in data/training directory")
+        logger.info("To use fine-tuning, obtain real training data from external sources and place it in the data/training directory.")
         
         print("Fine-tuning skipped: no synthetic test generation allowed.")
         return None
@@ -188,7 +190,32 @@ class GraniteTestCaseGenerator:
         - github: GitHub connector for teams using GitHub Issues
         - local: LocalFileSystem connector for teams using local files
         """
-        teams_config = self.config.get('teams', [])
+        teams_config = list(self.config.get('teams', []) or [])
+
+        # Optionally merge integration config file specified via env var
+        integ_path = os.getenv("INTEGRATION_CONFIG_PATH")
+        if integ_path and Path(integ_path).exists():
+            try:
+                import yaml
+                with open(integ_path, 'r', encoding='utf-8') as f:
+                    integ_cfg = yaml.safe_load(f) or {}
+                extra_teams = integ_cfg.get('teams', []) or []
+                # Normalize connector fields for local connectors (accept 'path' alias)
+                for t in extra_teams:
+                    conn = t.get('connector', {}) or {}
+                    if conn.get('type', '').lower() == 'local':
+                        if 'path' in conn and 'input_directory' not in conn:
+                            conn['input_directory'] = str(conn['path'])
+                        # Normalize 'output' key if provided
+                        if 'output' in conn and 'output_directory' not in conn:
+                            conn['output_directory'] = str(conn['output'])
+                        # Cleanup aliases
+                        conn.pop('path', None)
+                        conn.pop('output', None)
+                teams_config.extend(extra_teams)
+                logger.info(f"Merged {len(extra_teams)} teams from integration config: {integ_path}")
+            except Exception as e:
+                logger.error(f"Failed to load integration config from {integ_path}: {e}")
         
         if not teams_config:
             logger.warning("No teams configured. Using default local team.")
@@ -246,7 +273,15 @@ class GraniteTestCaseGenerator:
         print("Starting test case generation for all teams...")
         logger.info("Starting test case generation for all registered teams")
         
-        results = await self.components['orchestrator'].process_all_teams()
+        # If no teams registered yet, attempt to register from config (includes default local fallback)
+        orchestrator = self.components['orchestrator']
+        has_requirements = self.components.get('has_requirements', False)
+        if not getattr(orchestrator, 'team_configs', {}) and has_requirements:
+            try:
+                self.register_teams()
+            except Exception as e:
+                logger.warning(f"Team registration failed or none configured: {e}")
+        results = await orchestrator.process_all_teams()
         
         # Get output directory from config or use default
         output_dir_path = self.config.get('paths', {}).get('output_dir', "output")
@@ -260,7 +295,10 @@ class GraniteTestCaseGenerator:
             # Save test cases as JSON
             output_file = output_dir / f"{team_name}_test_cases.json"
             with open(output_file, 'w') as f:
-                test_cases_dict = [tc.dict() for tc in test_cases]
+                test_cases_dict = [
+                    (tc.model_dump() if hasattr(tc, 'model_dump') else tc.dict())
+                    for tc in test_cases
+                ]
                 json.dump(test_cases_dict, f, indent=2, default=str)
             
             logger.info(f"Generated {len(test_cases)} test cases for team: {team_name}")

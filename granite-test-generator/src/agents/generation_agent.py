@@ -340,8 +340,12 @@ Generate one test case using the exact format above.
         if not steps:
             steps.append(TestStep(step_number=1, action="Execute the test scenario", expected_result="Test completes successfully"))
 
+        import hashlib
+        # Deterministic ID derived from summary, team, and unique hint
+        uniq_src = f"{team_name}|{len(steps)}|{summary}|{unique_hint or ''}"
+        tc_id = f"{team_name}_{hashlib.md5(uniq_src.encode('utf-8')).hexdigest()[:8]}"
         return TestCase(
-            id=f"{team_name}_{len(steps)}_{hash(summary + (unique_hint or '')) % 1000}",
+            id=tc_id,
             summary=summary,
             priority=TestCasePriority.MEDIUM,
             test_type=TestCaseType.FUNCTIONAL,

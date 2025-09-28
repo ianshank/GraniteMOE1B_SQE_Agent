@@ -281,7 +281,11 @@ def test_process_json_file(connector, temp_input_dir):
         content = f.read()
     
     requirements = connector._process_json_file(json_file_single, content)
-    assert requirements is None  # Single JSON is not processed as a collection
+    # Single JSON object should be processed when it contains a requirement
+    assert requirements is not None
+    assert isinstance(requirements, list)
+    assert len(requirements) == 1
+    assert requirements[0]["id"] == "REQ-001"
     
     # Test collection JSON
     json_file_collection = temp_input_dir / "requirement_collection.json"
