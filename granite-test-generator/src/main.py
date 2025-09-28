@@ -13,6 +13,11 @@ from src.agents.generation_agent import TestGenerationAgent
 from src.integration.workflow_orchestrator import WorkflowOrchestrator, TeamConfiguration
 from src.integration.team_connectors import JiraConnector, GitHubConnector, LocalFileSystemConnector
 from src.data.data_processors import TestCaseDataProcessor
+from src.utils.config_utils import resolve_env_vars, load_config_with_env_vars
+from src.utils.constants import (
+    ENV_INTEGRATION_CONFIG_PATH, ENV_LOCAL_ONLY_MODE, ENV_CONFIG_OVERRIDE_MODE,
+    CONFIG_MODE_MERGE, CONFIG_MODE_REPLACE
+)
 
 logger = logging.getLogger(__name__)
 
@@ -38,26 +43,24 @@ class GraniteTestCaseGenerator:
             config_dict: Configuration dictionary (overrides config_path if provided)
             
         Returns:
-            Configuration dictionary
+            Configuration dictionary with environment variables resolved
             
-        Raises:
-            FileNotFoundError: If config_path does not exist and config_dict is None
-            yaml.YAMLError: If config_path exists but contains invalid YAML
+        Note:
+            If the configuration file is not found, an empty dictionary is returned.
         """
         # If config_dict is provided, use it directly
         if config_dict is not None:
             logger.debug("Using provided configuration dictionary")
-            return config_dict
+            # Resolve any environment variables in the provided dictionary
+            return resolve_env_vars(config_dict)
         
-        # Otherwise, load from file
-        import yaml
+        # Otherwise, load from file with environment variable resolution
         try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                config = yaml.safe_load(f)
-                logger.debug("Loaded configuration from %s", config_path)
-                return config or {}
+            config = load_config_with_env_vars(config_path)
+            logger.debug("Loaded configuration from %s", config_path)
+            return config
         except FileNotFoundError:
-            logger.warning(f"Configuration file not found: {config_path}")
+            logger.warning("Configuration file not found: %s", config_path)
             return {}
 
     def _local_only_mode_enabled(self) -> bool:
@@ -66,7 +69,7 @@ class GraniteTestCaseGenerator:
         Accepts common truthy/falsey string values. Raises ValueError when an
         explicit but unrecognised value is provided to surface configuration mistakes.
         """
-        flag = os.getenv("GRANITE_LOCAL_ONLY")
+        flag = os.getenv(ENV_LOCAL_ONLY_MODE)
         if flag is None or flag.strip() == "":
             return False
 
@@ -81,7 +84,7 @@ class GraniteTestCaseGenerator:
 
         valid_values = sorted(truthy | falsy)
         raise ValueError(
-            "Invalid value for GRANITE_LOCAL_ONLY: "
+            f"Invalid value for {ENV_LOCAL_ONLY_MODE}: "
             f"{flag!r}. Expected one of {valid_values} or unset."
         )
     
@@ -102,38 +105,39 @@ class GraniteTestCaseGenerator:
         Raises:
             yaml.YAMLError: If integration config file contains invalid YAML
         """
-        integ_path = os.getenv("INTEGRATION_CONFIG_PATH")
+        integ_path = os.getenv(ENV_INTEGRATION_CONFIG_PATH)
         if not integ_path or not Path(integ_path).exists():
             logger.debug("No integration config override found, using base teams")
             return base_teams
         
         try:
-            import yaml
-            with open(integ_path, 'r', encoding='utf-8') as f:
-                integ_cfg = yaml.safe_load(f) or {}
+            # Use our config loader that handles environment variables
+            config = load_config_with_env_vars(integ_path)
             
-            extra_teams = integ_cfg.get('teams', []) or []
+            extra_teams = config.get('teams', []) or []
             if not extra_teams:
-                logger.warning(f"Integration config {integ_path} contains no teams")
+                logger.warning("Integration config %s contains no teams", integ_path)
                 return base_teams
             
             # Normalize connector configurations
             normalized_teams = self._normalize_connector_configs(extra_teams)
             
             # Determine merge behavior
-            override_mode = os.getenv("GRANITE_CONFIG_OVERRIDE_MODE", "merge").lower()
+            override_mode = os.getenv(ENV_CONFIG_OVERRIDE_MODE, CONFIG_MODE_MERGE).lower()
             
-            if override_mode == "replace":
-                logger.info(f"REPLACE mode: Using {len(normalized_teams)} teams from {integ_path}, ignoring base config")
+            if override_mode == CONFIG_MODE_REPLACE:
+                logger.info("REPLACE mode: Using %d teams from %s, ignoring base config", 
+                           len(normalized_teams), integ_path)
                 return normalized_teams
             else:
                 # Merge mode with deduplication (integration config wins for duplicates)
                 merged_teams = self._merge_and_deduplicate_teams(base_teams, normalized_teams)
-                logger.info(f"MERGE mode: Combined {len(base_teams)} base + {len(normalized_teams)} integration = {len(merged_teams)} final teams")
+                logger.info("MERGE mode: Combined %d base + %d integration = %d final teams", 
+                           len(base_teams), len(normalized_teams), len(merged_teams))
                 return merged_teams
                 
         except Exception as e:
-            logger.error(f"Failed to load integration config from {integ_path}: {e}")
+            logger.error("Failed to load integration config from %s: %s", integ_path, e)
             logger.info("Falling back to base configuration teams")
             return base_teams
     
@@ -362,7 +366,7 @@ class GraniteTestCaseGenerator:
         user_stories = []
         if user_stories_file.exists():
             user_stories = processor.process_user_stories(str(user_stories_file))
-            logger.info(f"Processed {len(user_stories)} user stories from {user_stories_file}")
+            logger.info("Processed %d user stories from %s", len(user_stories), user_stories_file)
             print(f"Processed {len(user_stories)} user stories")
             
             # Index user stories in RAG system if RAG is enabled
@@ -476,7 +480,7 @@ class GraniteTestCaseGenerator:
             except Exception as e:
                 logger.error(f"Unexpected error registering team: {e}")
                 continue
-
+            
         # Check if any teams were registered
         if registered_count == 0:
             logger.error("No valid teams were registered. Cannot proceed.")
@@ -527,50 +531,52 @@ class GraniteTestCaseGenerator:
         output_dir = Path(output_dir_path)
         output_dir.mkdir(parents=True, exist_ok=True)
         logger.debug("Writing generated results to %s", output_dir.absolute())
-
+        
         total_generated = 0
         files_written = 0
 
         for team_name, test_cases in results.items():
             total_generated += len(test_cases)
-
+            
             # Save test cases as JSON with enhanced error handling and logging
             output_file = output_dir / f"{team_name}_test_cases.json"
 
             try:
                 logger.debug("Writing %d test cases to %s", len(test_cases), output_file)
 
-                with open(output_file, 'w', encoding='utf-8') as f:
-                    test_cases_dict = []
-                    for i, tc in enumerate(test_cases):
-                        try:
-                            if hasattr(tc, 'model_dump'):
-                                tc_dict = tc.model_dump()
-                            elif hasattr(tc, 'dict'):
-                                tc_dict = tc.dict()
-                            else:
-                                logger.error(
-                                    "Test case %d (type=%s) is not serializable; coercing to string",
-                                    i,
-                                    type(tc).__name__,
-                                )
-                                tc_dict = str(tc)
-                            test_cases_dict.append(tc_dict)
-                        except Exception as e:
-                            logger.warning(
-                                "Failed to serialize test case %d (type=%s): %s",
+                # Prepare the test cases for serialization
+                test_cases_dict = []
+                for i, tc in enumerate(test_cases):
+                    try:
+                        if hasattr(tc, 'model_dump'):
+                            tc_dict = tc.model_dump()
+                        elif hasattr(tc, 'dict'):
+                            tc_dict = tc.dict()
+                        else:
+                            logger.error(
+                                "Test case %d (type=%s) is not serializable; coercing to string",
                                 i,
                                 type(tc).__name__,
-                                e,
                             )
-                            continue
-
+                            tc_dict = str(tc)
+                        test_cases_dict.append(tc_dict)
+                    except Exception as e:
+                        logger.warning(
+                            "Failed to serialize test case %d (type=%s): %s",
+                            i,
+                            type(tc).__name__,
+                            e,
+                        )
+                        continue
+                
+                # Write the serialized test cases to the file
+                with open(output_file, 'w', encoding='utf-8') as f:
                     json.dump(test_cases_dict, f, indent=2, default=str)
-                    logger.debug(
-                        "Successfully wrote %d serialized test cases to %s",
-                        len(test_cases_dict),
-                        output_file,
-                    )
+                logger.debug(
+                    "Successfully wrote %d serialized test cases to %s",
+                    len(test_cases_dict),
+                    output_file,
+                )
 
                 files_written += 1
 

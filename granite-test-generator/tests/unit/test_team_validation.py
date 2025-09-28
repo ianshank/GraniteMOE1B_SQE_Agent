@@ -9,6 +9,7 @@ import pytest
 from pathlib import Path
 from typing import Dict, Any, List
 from unittest.mock import patch, MagicMock
+import os
 
 from src.main import GraniteTestCaseGenerator
 
@@ -202,12 +203,14 @@ class TestTeamValidationIntegration:
             mock_orchestrator_instance.create_team_configuration.return_value = MagicMock()
             mock_orchestrator_instance.register_team.return_value = None
             mock_orchestrator.return_value = mock_orchestrator_instance
-            
-            generator = GraniteTestCaseGenerator(config_dict=config)
-            generator.components['orchestrator'] = mock_orchestrator_instance
-            
-            # Should register only the valid team
-            registered_count = generator.register_teams()
+    
+            # Isolate the test from any global integration config
+            with patch.dict(os.environ, {"INTEGRATION_CONFIG_PATH": ""}):
+                generator = GraniteTestCaseGenerator(config_dict=config)
+                generator.components['orchestrator'] = mock_orchestrator_instance
+        
+                # Should register only the valid team
+                registered_count = generator.register_teams()
             assert registered_count == 1
             
             # Verify only valid team was processed

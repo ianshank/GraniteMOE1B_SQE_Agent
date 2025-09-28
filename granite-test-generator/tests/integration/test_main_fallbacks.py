@@ -41,6 +41,9 @@ async def test_main_fallback_from_local_requirements(tmp_path: Path, monkeypatch
     (tmp_path / "data" / "requirements").mkdir(parents=True)
     (tmp_path / "data" / "requirements" / "r1.txt").write_text("Login feature", encoding="utf-8")
 
+    # Isolate the test from any global integration config
+    monkeypatch.setenv("INTEGRATION_CONFIG_PATH", "")
+
     gen = GraniteTestCaseGenerator(config_path=str(model_cfg))
     await gen.initialize_system()
     await gen.setup_data_pipeline()
