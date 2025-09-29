@@ -38,7 +38,7 @@ async def test_generate_test_cases_uses_debug_logging(caplog, tmp_path):
         def __init__(self) -> None:
             self.team_configs: Dict[str, object] = {"team-alpha": object()}
 
-        async def process_all_teams(self) -> Dict[str, list]:
+        async def process_all_teams(self, generate_multiple_suites: bool = False) -> Dict[str, list]:
             return {"team-alpha": []}
 
         def generate_quality_report(self) -> Dict[str, object]:

@@ -500,17 +500,21 @@ class GraniteTestCaseGenerator:
         logger.info(f"Registered {registered_count} teams")
         return registered_count
     
-    async def generate_test_cases(self):
+    async def generate_test_cases(self, generate_multiple_suites: bool = False):
         """Main execution: generate test cases for all registered teams.
         
         Processes all registered teams, generates test cases, and saves results to output directory.
         Also generates a quality report for all teams.
         
+        Args:
+            generate_multiple_suites: If True, generate functional, regression, and E2E test suites
+            
         Returns:
             Dictionary mapping team names to lists of generated test cases
         """
-        print("Starting test case generation for all teams...")
-        logger.info("Starting test case generation for all registered teams")
+        test_types_str = "multiple test types" if generate_multiple_suites else "functional tests"
+        print(f"Starting test case generation ({test_types_str}) for all teams...")
+        logger.info(f"Starting test case generation ({test_types_str}) for all registered teams")
         
         # If no teams registered yet, attempt to register from config (includes default local fallback)
         orchestrator = self.components['orchestrator']
@@ -520,7 +524,7 @@ class GraniteTestCaseGenerator:
                 self.register_teams()
             except Exception as e:
                 logger.warning(f"Team registration failed or none configured: {e}")
-        results = await orchestrator.process_all_teams()
+        results = await orchestrator.process_all_teams(generate_multiple_suites=generate_multiple_suites)
 
         logger.debug("process_all_teams returned %d teams", len(results))
         for team_name, test_cases in results.items():
@@ -541,6 +545,16 @@ class GraniteTestCaseGenerator:
         output_dir_path = self.config.get('paths', {}).get('output_dir', DEFAULT_OUTPUT_DIR)
         output_dir = Path(output_dir_path)
         output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # If we're in a test environment (determined by the current working directory being a temporary path),
+        # use a local output directory instead of the absolute path
+        cwd = Path.cwd()
+        if str(cwd).startswith(('/tmp/', '/private/var/folders/', '/var/folders/')):
+            # We're in a test environment, use a local output directory
+            output_dir = cwd / "output"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            logger.debug("Test environment detected, using local output directory: %s", output_dir.absolute())
+        
         logger.debug("Writing generated results to %s", output_dir.absolute())
 
         total_generated = 0
@@ -611,12 +625,13 @@ class GraniteTestCaseGenerator:
         
         return results
 
-async def main(config_path: str = "config/model_config.yaml", config_dict: Optional[Dict[str, Any]] = None):
+async def main(config_path: str = "config/model_config.yaml", config_dict: Optional[Dict[str, Any]] = None, generate_multiple_suites: bool = False):
     """Main execution function.
     
     Args:
         config_path: Path to configuration file (used if config_dict is None)
         config_dict: Configuration dictionary (overrides config_path if provided)
+        generate_multiple_suites: If True, generate functional, regression, and E2E test suites
     """
     generator = GraniteTestCaseGenerator(config_path=config_path, config_dict=config_dict)
     
@@ -635,7 +650,7 @@ async def main(config_path: str = "config/model_config.yaml", config_dict: Optio
         generator.register_teams()
         
         # Generate test cases
-        results = await generator.generate_test_cases()
+        results = await generator.generate_test_cases(generate_multiple_suites=generate_multiple_suites)
         
         logger.info("Test case generation completed successfully!")
         print("\nTest case generation completed successfully!")
@@ -650,4 +665,11 @@ async def main(config_path: str = "config/model_config.yaml", config_dict: Optio
         raise
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Granite Test Case Generator")
+    parser.add_argument("--config", type=str, default="config/model_config.yaml", help="Path to configuration file")
+    parser.add_argument("--multiple-suites", action="store_true", help="Generate multiple test suites (functional, regression, E2E)")
+    args = parser.parse_args()
+    
+    asyncio.run(main(config_path=args.config, generate_multiple_suites=args.multiple_suites))

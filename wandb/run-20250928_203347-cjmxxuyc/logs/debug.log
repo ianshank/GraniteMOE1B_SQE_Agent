@@ -1,0 +1,15 @@
+2025-09-28 20:33:47,665 INFO    MainThread:92685 [wandb_setup.py:_flush():81] Current SDK version is 0.21.4
+2025-09-28 20:33:47,666 INFO    MainThread:92685 [wandb_setup.py:_flush():81] Configure stats pid to 92685
+2025-09-28 20:33:47,666 INFO    MainThread:92685 [wandb_setup.py:_flush():81] Loading settings from /Users/iancruickshank/.config/wandb/settings
+2025-09-28 20:33:47,666 INFO    MainThread:92685 [wandb_setup.py:_flush():81] Loading settings from /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/settings
+2025-09-28 20:33:47,666 INFO    MainThread:92685 [wandb_setup.py:_flush():81] Loading settings from environment variables
+2025-09-28 20:33:47,666 INFO    MainThread:92685 [wandb_init.py:setup_run_log_directory():686] Logging user logs to /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/run-20250928_203347-cjmxxuyc/logs/debug.log
+2025-09-28 20:33:47,666 INFO    MainThread:92685 [wandb_init.py:setup_run_log_directory():687] Logging internal logs to /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/run-20250928_203347-cjmxxuyc/logs/debug-internal.log
+2025-09-28 20:33:47,666 INFO    MainThread:92685 [wandb_init.py:init():813] calling init triggers
+2025-09-28 20:33:47,666 INFO    MainThread:92685 [wandb_init.py:init():818] wandb.init called with sweep_config: {}
+config: {'model': {'type': 'moe', 'repo_id': 'ibm-granite/granite-3-moe-instruct', 'pretrained_weights': './artifacts/moe_checkpoints/checkpoint-latest.pt', 'save_dir': './artifacts/moe_checkpoints/', 'tokenizer_name': 'ibm-granite/granite-3-moe-instruct', 'tokenizer_kwargs': {'truncation': True, 'padding': 'max_length', 'max_length': 1024}}, 'training': {'epochs': 1, 'batch_size': 4, 'learning_rate': 0.001, 'task_type': 'classification'}, 'data': {'train_file': './data/testcases/train.jsonl', 'val_file': './data/testcases/val.jsonl', 'test_file': './data/testcases/test.jsonl', 'input_format': 'jsonl', 'requirements_rag': './data/stories/requirements.jsonl', 'user_stories_dir': './data/stories/', 'batch_size': 8, 'num_workers': 4}, 'runtime': {'device': 'cpu'}, '_wandb': {}}
+2025-09-28 20:33:47,666 INFO    MainThread:92685 [wandb_init.py:init():854] starting backend
+2025-09-28 20:33:47,890 INFO    MainThread:92685 [wandb_init.py:init():857] sending inform_init request
+2025-09-28 20:33:47,928 INFO    MainThread:92685 [wandb_init.py:init():865] backend started and connected
+2025-09-28 20:33:47,931 INFO    MainThread:92685 [wandb_init.py:init():936] updated telemetry
+2025-09-28 20:33:47,953 INFO    MainThread:92685 [wandb_init.py:init():960] communicating run to backend with 90.0 second timeout

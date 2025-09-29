@@ -1,0 +1,28 @@
+2025-09-28 22:05:26,906 INFO    MainThread:97342 [wandb_setup.py:_flush():81] Current SDK version is 0.21.4
+2025-09-28 22:05:26,907 INFO    MainThread:97342 [wandb_setup.py:_flush():81] Configure stats pid to 97342
+2025-09-28 22:05:26,907 INFO    MainThread:97342 [wandb_setup.py:_flush():81] Loading settings from /Users/iancruickshank/.config/wandb/settings
+2025-09-28 22:05:26,907 INFO    MainThread:97342 [wandb_setup.py:_flush():81] Loading settings from /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/settings
+2025-09-28 22:05:26,907 INFO    MainThread:97342 [wandb_setup.py:_flush():81] Loading settings from environment variables
+2025-09-28 22:05:26,907 INFO    MainThread:97342 [wandb_init.py:setup_run_log_directory():686] Logging user logs to /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/offline-run-20250928_220526-4jfp6wbl/logs/debug.log
+2025-09-28 22:05:26,907 INFO    MainThread:97342 [wandb_init.py:setup_run_log_directory():687] Logging internal logs to /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/offline-run-20250928_220526-4jfp6wbl/logs/debug-internal.log
+2025-09-28 22:05:26,907 INFO    MainThread:97342 [wandb_init.py:init():813] calling init triggers
+2025-09-28 22:05:26,907 INFO    MainThread:97342 [wandb_init.py:init():818] wandb.init called with sweep_config: {}
+config: {'test': 'integration', '_wandb': {}}
+2025-09-28 22:05:26,907 INFO    MainThread:97342 [wandb_init.py:init():854] starting backend
+2025-09-28 22:05:27,124 INFO    MainThread:97342 [wandb_init.py:init():857] sending inform_init request
+2025-09-28 22:05:27,145 INFO    MainThread:97342 [wandb_init.py:init():865] backend started and connected
+2025-09-28 22:05:27,147 INFO    MainThread:97342 [wandb_init.py:init():936] updated telemetry
+2025-09-28 22:05:27,162 INFO    MainThread:97342 [wandb_init.py:init():960] communicating run to backend with 90.0 second timeout
+2025-09-28 22:05:27,271 INFO    MainThread:97342 [wandb_init.py:init():1011] starting run threads in backend
+2025-09-28 22:05:27,541 INFO    MainThread:97342 [wandb_run.py:_console_start():2506] atexit reg
+2025-09-28 22:05:27,541 INFO    MainThread:97342 [wandb_run.py:_redirect():2354] redirect: wrap_raw
+2025-09-28 22:05:27,542 INFO    MainThread:97342 [wandb_run.py:_redirect():2423] Wrapping output streams.
+2025-09-28 22:05:27,542 INFO    MainThread:97342 [wandb_run.py:_redirect():2446] Redirects installed.
+2025-09-28 22:05:27,543 INFO    MainThread:97342 [wandb_init.py:init():1049] run started, returning control to user process
+2025-09-28 22:05:27,544 INFO    MainThread:97342 [wandb_run.py:_config_callback():1392] config_cb None None {'git_sha': '7ce14ef3ecaef9e6c9353db78b1bafb02bf8364a'}
+2025-09-28 22:05:27,544 INFO    MainThread:97342 [wandb_run.py:_config_callback():1392] config_cb None None {'test': 'integration'}
+2025-09-28 22:05:27,545 INFO    MainThread:97342 [wandb_run.py:_config_callback():1392] config_cb None None {'source': 'multiple'}
+2025-09-28 22:05:27,545 INFO    MainThread:97342 [wandb_run.py:_finish():2272] finishing run cli-entity/env-project/4jfp6wbl
+2025-09-28 22:05:27,545 INFO    MainThread:97342 [wandb_run.py:_atexit_cleanup():2471] got exitcode: 0
+2025-09-28 22:05:27,545 INFO    MainThread:97342 [wandb_run.py:_restore():2453] restore
+2025-09-28 22:05:27,545 INFO    MainThread:97342 [wandb_run.py:_restore():2459] restore done

@@ -4,7 +4,7 @@
 # YAML anchors for reusable configuration blocks
 default_local_connector: &local_connector
   type: "local"
-  input_directory: "data/user_stories"
+  input_directory: "data/requirements"
   output_directory: "output"
 
 default_team_settings: &team_settings

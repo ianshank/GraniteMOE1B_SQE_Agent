@@ -90,19 +90,35 @@ class TestGenerationAgent:
         return "No cached response found"
     
     def _generate_test_case(self, requirement: str) -> str:
-        """Generate test case using MLX model or fallback templating."""
+        """Generate test case using MLX model, transformers model, or fallback templating."""
+        # Try MLX first (optimal for Apple Silicon)
         if not getattr(self.granite_model, 'mlx_model', None) or not getattr(self.granite_model, 'mlx_tokenizer', None):
             self.granite_model.load_model_for_inference()
-            # If still not available, fallback
-            if not getattr(self.granite_model, 'mlx_model', None) or not getattr(self.granite_model, 'mlx_tokenizer', None):
-                return self._template_generate(requirement)
+        
+        # If MLX not available, try transformers model
+        if not getattr(self.granite_model, 'mlx_model', None):
+            return self._generate_with_transformers(requirement)
+        
+        # If no models available, use enhanced template generation
+        if not getattr(self.granite_model, 'mlx_model', None) and not getattr(self.granite_model, 'model', None):
+            return self._template_generate(requirement)
 
         prompt = f"""<|system|>
-You are a software quality engineer. Create a detailed test case for the given requirement.
+You are an expert software quality engineer. Create a comprehensive, detailed test case that thoroughly validates the system against the given requirement. Include specific validation steps, edge cases, error conditions, and acceptance criteria verification.
 
 <|user|>
 Requirement: {requirement}
-Create a comprehensive test case with summary, input data, steps, and expected results.
+
+Create a detailed test case that includes:
+1. A clear, specific summary describing what is being tested
+2. Comprehensive test steps with detailed actions and specific validation points
+3. Expected results that validate all acceptance criteria
+4. Input data requirements and test data specifications
+5. Verification of security, performance, and functional requirements
+6. Edge cases and error condition testing
+7. Specific assertions and validation checks
+
+Format your response with [TEST_CASE][SUMMARY]...[/SUMMARY][INPUT_DATA]...[/INPUT_DATA][STEPS]...[/STEPS][EXPECTED]...[/EXPECTED][/TEST_CASE]
 
 <|assistant|>"""
 
@@ -127,53 +143,199 @@ Create a comprehensive test case with summary, input data, steps, and expected r
         except Exception:
             # Final fallback
             return self._template_generate(requirement)
+    
+    def _generate_with_transformers(self, requirement: str) -> str:
+        """Generate test case using transformers library when MLX is not available."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        try:
+            # Load transformers model if not already loaded
+            if not getattr(self.granite_model, 'model', None):
+                logger.info("Loading transformers model for test case generation")
+                self.granite_model.load_model_for_training()
+            
+            if not getattr(self.granite_model, 'model', None):
+                logger.warning("Transformers model not available, falling back to template generation")
+                return self._template_generate(requirement)
+            
+            # Create enhanced prompt for transformers
+            prompt = f"""<|system|>
+You are an expert software quality engineer. Create a comprehensive, detailed test case that thoroughly validates the system against the given requirement. Include specific validation steps, edge cases, error conditions, and acceptance criteria verification.
+
+<|user|>
+Requirement: {requirement}
+
+Create a detailed test case that includes:
+1. A clear, specific summary describing what is being tested
+2. Comprehensive test steps with detailed actions and specific validation points
+3. Expected results that validate all acceptance criteria
+4. Input data requirements and test data specifications
+5. Verification of security, performance, and functional requirements
+6. Edge cases and error condition testing
+7. Specific assertions and validation checks
+
+Format your response with [TEST_CASE][SUMMARY]...[/SUMMARY][INPUT_DATA]...[/INPUT_DATA][STEPS]...[/STEPS][EXPECTED]...[/EXPECTED][/TEST_CASE]
+
+<|assistant|>"""
+
+            # Tokenize and generate
+            inputs = self.granite_model.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
+            
+            with torch.no_grad():
+                outputs = self.granite_model.model.generate(
+                    **inputs,
+                    max_new_tokens=512,
+                    temperature=0.7,
+                    do_sample=True,
+                    pad_token_id=self.granite_model.tokenizer.eos_token_id
+                )
+            
+            # Decode response
+            generated_text = self.granite_model.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            
+            # Extract only the assistant's response
+            if "<|assistant|>" in generated_text:
+                response = generated_text.split("<|assistant|>")[-1].strip()
+            else:
+                response = generated_text.strip()
+            
+            logger.debug(f"Generated test case using transformers model: {len(response)} characters")
+            return response
+            
+        except Exception as e:
+            logger.error(f"Error generating with transformers model: {e}")
+            return self._template_generate(requirement)
 
     def _template_generate(self, requirement: str) -> str:
-        """Lightweight, deterministic template-based generation when model is unavailable."""
+        """Extract detailed test steps from the actual requirement content."""
         import textwrap, re
-        # Heuristic summary extraction
-        summary_line = next((ln.strip() for ln in requirement.split("\n") if ln.strip()), requirement)[:120]
-
-        # Derive domain-specific steps
-        req_lower = requirement.lower()
-        if any(k in req_lower for k in ["login", "authenticate", "sign in"]):
-            raw_steps = TEMPLATE_PATTERNS["login"]
-        elif any(k in req_lower for k in ["upload", "ingest"]):
-            raw_steps = TEMPLATE_PATTERNS["upload"]
-        else:
-            raw_steps = TEMPLATE_PATTERNS["default"]
-
-        steps_block = "\n".join([f"{i+1}. {s}" for i, s in enumerate(raw_steps)])
-
+        
+        # Extract meaningful summary from requirement
+        lines = [line.strip() for line in requirement.split('\n') if line.strip()]
+        summary = "Test case for requirement"
+        
+        # Look for title/header
+        for line in lines:
+            if line.startswith('#') or line.startswith('**') or 'title' in line.lower():
+                summary = re.sub(r'^#+\s*|\*\*|\*', '', line).strip()
+                break
+        
+        if len(summary) < 10:  # If no good summary found, use first substantial line
+            for line in lines:
+                if len(line) > 20 and not line.startswith('#'):
+                    summary = line[:100]
+                    break
+        
+        # Extract acceptance criteria and requirements from the text
+        steps = []
+        step_num = 1
+        
+        # Look for acceptance criteria, requirements, or test scenarios in the text
+        acceptance_section = False
+        requirement_section = False
+        
+        for line in lines:
+            line_lower = line.lower()
+            
+            # Identify sections
+            if any(keyword in line_lower for keyword in ['acceptance criteria', 'requirements', 'test', 'validate', 'verify']):
+                acceptance_section = True
+                continue
+            elif line.startswith('#') or line.startswith('**'):
+                acceptance_section = False
+                requirement_section = 'requirement' in line_lower
+                continue
+                
+            # Extract actionable items
+            if acceptance_section or requirement_section:
+                # Look for bullet points, numbered items, or "must/should" statements
+                if (line.startswith('-') or line.startswith('*') or 
+                    re.match(r'^\d+\.', line) or 
+                    any(word in line_lower for word in ['must', 'should', 'shall', 'will'])):
+                    
+                    # Clean up the line and create a test step
+                    clean_line = re.sub(r'^[-*\d\.]+\s*', '', line).strip()
+                    if len(clean_line) > 10:  # Only meaningful steps
+                        action = f"Verify that {clean_line.lower()}"
+                        expected = "Requirement is satisfied and system behaves as specified"
+                        steps.append(f"{step_num}. {action} -> {expected}")
+                        step_num += 1
+        
+        # If no specific steps found, create generic validation steps
+        if not steps:
+            steps = [
+                f"1. Set up test environment and prerequisites -> Environment is ready for testing",
+                f"2. Execute the primary functionality described in requirement -> System responds correctly",
+                f"3. Validate all acceptance criteria are met -> All criteria pass validation",
+                f"4. Test edge cases and error conditions -> System handles edge cases properly",
+                f"5. Verify system state and cleanup -> System returns to expected state"
+            ]
+        
+        steps_block = "\n".join(steps)
+        
+        # Extract input data requirements
+        input_data = "{}"
+        if any(keyword in requirement.lower() for keyword in ['input', 'data', 'parameter', 'field']):
+            input_data = '{"test_data": "Specific test data based on requirement specifications"}'
+        
         return textwrap.dedent(f"""
             [TEST_CASE]
-            [SUMMARY]{summary_line}[/SUMMARY]
+            [SUMMARY]{summary}[/SUMMARY]
 
             [INPUT_DATA]
-            {{}}
+            {input_data}
             [/INPUT_DATA]
 
             [STEPS]
             {steps_block}
             [/STEPS]
 
-            [EXPECTED]System should satisfy the requirement without errors[/EXPECTED]
+            [EXPECTED]All acceptance criteria are validated and the system meets the specified requirements[/EXPECTED]
             [/TEST_CASE]
         """).strip()
         
     def _validate_test_case(self, test_case_text: str) -> str:
-        """Tool function to validate test case structure"""
+        """Tool function to validate test case structure and quality"""
+        import re
+        
         required_sections = ['summary', 'steps', 'expected']
         missing_sections = []
+        quality_issues = []
         
+        # Check for required sections
         for section in required_sections:
             if section.lower() not in test_case_text.lower():
                 missing_sections.append(section)
         
+        # Check for quality indicators
+        steps_match = re.search(r'\[STEPS\](.*?)\[/STEPS\]', test_case_text, re.IGNORECASE | re.DOTALL)
+        if steps_match:
+            steps_content = steps_match.group(1).strip()
+            
+            # Check if steps are too generic
+            if 'stub' in steps_content.lower() or len(steps_content.split('\n')) < 3:
+                quality_issues.append("Test steps are too generic or insufficient")
+            
+            # Check for validation keywords
+            validation_keywords = ['verify', 'validate', 'check', 'confirm', 'ensure', 'assert']
+            if not any(keyword in steps_content.lower() for keyword in validation_keywords):
+                quality_issues.append("Test steps lack proper validation actions")
+        
+        # Check summary quality
+        summary_match = re.search(r'\[SUMMARY\](.*?)\[/SUMMARY\]', test_case_text, re.IGNORECASE | re.DOTALL)
+        if summary_match:
+            summary_content = summary_match.group(1).strip()
+            if 'stub' in summary_content.lower() or len(summary_content) < 20:
+                quality_issues.append("Test summary is too generic or brief")
+        
+        # Return validation result
         if missing_sections:
             return f"Validation failed. Missing sections: {', '.join(missing_sections)}"
+        elif quality_issues:
+            return f"Validation warning. Quality issues: {'; '.join(quality_issues)}"
         else:
-            return "Validation passed. Test case structure is complete."
+            return "Validation passed. Test case structure and quality are acceptable."
     
     async def generate_test_cases_for_team(self, team_name: str, 
                                          requirements: List[str]) -> List['TestCase']:

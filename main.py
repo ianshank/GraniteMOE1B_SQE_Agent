@@ -35,6 +35,13 @@ def main() -> None:
     logger.debug(f"Working directory: {os.getcwd()}")
     
     try:
+        # Resolve integration config path to an absolute path before changing directory
+        integ_path = os.getenv("INTEGRATION_CONFIG_PATH")
+        if integ_path and not Path(integ_path).is_absolute():
+            abs_integ_path = str(Path(integ_path).resolve())
+            os.environ["INTEGRATION_CONFIG_PATH"] = abs_integ_path
+            logger.info(f"Resolved relative INTEGRATION_CONFIG_PATH to absolute path: {abs_integ_path}")
+            
         # Determine granite-test-generator directory for proper path resolution
         project_root_override = os.getenv("GRANITE_PROJECT_ROOT")
         if project_root_override:
@@ -52,7 +59,19 @@ def main() -> None:
         
         # Import and run the main system
         from src.main import main as granite_main
-        asyncio.run(granite_main())
+        
+        # Parse command line arguments
+        import argparse
+        parser = argparse.ArgumentParser(description="Granite Test Case Generator")
+        parser.add_argument("--config", type=str, default="config/model_config.yaml", help="Path to configuration file")
+        parser.add_argument("--multiple-suites", action="store_true", help="Generate multiple test suites (functional, regression, E2E)")
+        args = parser.parse_args()
+        
+        # Run the main function with command line arguments
+        asyncio.run(granite_main(
+            config_path=args.config,
+            generate_multiple_suites=args.multiple_suites
+        ))
         
         logger.info("Granite MoE Test Generator completed successfully")
         
