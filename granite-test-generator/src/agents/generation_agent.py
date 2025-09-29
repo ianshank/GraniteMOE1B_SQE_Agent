@@ -338,76 +338,96 @@ Create a detailed test case with this exact format:
         return "Validation passed. Test case structure is complete."
     
     async def generate_test_cases_for_team(self, team_name: str, 
-                                         requirements: List[str]) -> List['TestCase']:
-        """Generate test cases for a specific team"""
+                                         requirements: List[str], 
+                                         test_types: List[TestCaseType] = [TestCaseType.FUNCTIONAL]) -> List['TestCase']:
+        """Generate test cases for a specific team with specified test types.
+        
+        Args:
+            team_name: The team context for the test cases
+            requirements: List of requirement strings to generate test cases from
+            test_types: List of test case types to generate (defaults to [FUNCTIONAL])
+            
+        Returns:
+            List of generated test cases
+        """
         test_cases = []
         
         for idx, requirement in enumerate(requirements):
-            # Agent workflow
-            steps = [
-                f"retrieve_requirements: {requirement}",
-                f"check_cache: {requirement}",
-                f"generate_test_case: {requirement}",
-                "validate_test_case: generated_test_case"
-            ]
-            
-            context = ""
-            generated_text = ""
-            
-            for step in steps:
-                action, query = step.split(": ", 1)
+            for test_type in test_types:
+                # Agent workflow
+                steps = [
+                    f"retrieve_requirements: {requirement}",
+                    f"check_cache: {requirement}_{test_type.value}",  # Include test type in cache key
+                    f"generate_test_case: {requirement}",
+                    "validate_test_case: generated_test_case"
+                ]
                 
-                if action == "retrieve_requirements":
-                    context = self._retrieve_requirements(query)
-                    self._logger.debug(f"Retrieved context length={len(context)} for team={team_name}")
-                elif action == "check_cache":
-                    cache_result = self._check_cache(query)
-                    if "Found cached response" in cache_result:
-                        generated_text = cache_result.split(": ", 1)[1]
-                        continue  # Skip generation if cached
-                elif action == "generate_test_case":
-                    full_requirement = f"{query}\n\nContext: {context}"
-                    generated_text = self._generate_test_case(full_requirement)
-                    # Provenance verification
-                    try:
-                        ok = self._verify_against_context(query, context, generated_text)
-                    except Exception:
-                        ok = False
-                    if not ok:
-                        msg = "Generated output failed provenance overlap check (may include non-source content)."
-                        if self.enforce_strict_provenance:
-                            self._logger.error(msg)
-                            raise ValueError(msg)
-                        else:
-                            self._logger.warning(msg)
-                elif action == "validate_test_case":
-                    validation_result = self._validate_test_case(generated_text)
-                    if "failed" in validation_result:
-                        # Do not auto-regenerate; fail fast per strict provenance policy
-                        self._logger.error(
-                            f"Validation failed for generated test case; skipping. Details: {validation_result}"
-                        )
-                        generated_text = ""
-            
-            # Parse generated text into TestCase object
-            try:
-                test_case = self._parse_generated_test_case(generated_text, team_name, unique_hint=str(idx))
-                test_cases.append(test_case)
+                context = ""
+                generated_text = ""
                 
-                # Cache the successful generation
-                self.cag_cache.cache_response(
-                    query=requirement,
-                    response=generated_text,
-                    context={'team': team_name},
-                    team_context=team_name,
-                    tags=['test_case', 'generated']
-                )
+                for step in steps:
+                    action, query = step.split(": ", 1)
+                    
+                    if action == "retrieve_requirements":
+                        context = self._retrieve_requirements(query)
+                        self._logger.debug(f"Retrieved context length={len(context)} for team={team_name}")
+                    elif action == "check_cache":
+                        cache_result = self._check_cache(query)
+                        if "Found cached response" in cache_result:
+                            generated_text = cache_result.split(": ", 1)[1]
+                            continue  # Skip generation if cached
+                    elif action == "generate_test_case":
+                        # Add test type to the prompt
+                        test_type_str = f"Test Type: {test_type.value.upper()}"
+                        full_requirement = f"{query}\n\n{test_type_str}\n\nContext: {context}"
+                        generated_text = self._generate_test_case(full_requirement)
+                        # Provenance verification
+                        try:
+                            ok = self._verify_against_context(query, context, generated_text)
+                        except Exception:
+                            ok = False
+                        if not ok:
+                            msg = "Generated output failed provenance overlap check (may include non-source content)."
+                            if self.enforce_strict_provenance:
+                                self._logger.error(msg)
+                                raise ValueError(msg)
+                            else:
+                                self._logger.warning(msg)
+                    elif action == "validate_test_case":
+                        validation_result = self._validate_test_case(generated_text)
+                        if "failed" in validation_result:
+                            # Do not auto-regenerate; fail fast per strict provenance policy
+                            self._logger.error(
+                                f"Validation failed for generated test case; skipping. Details: {validation_result}"
+                            )
+                            generated_text = ""
                 
-            except Exception as e:
-                self._logger.error(
-                    f"Failed to parse test case for requirement idx={idx}: {e}. Sample: {generated_text[:200]!r}"
-                )
-                continue
+                # Parse generated text into TestCase object
+                try:
+                    # Use the specific test type when parsing
+                    unique_hint = f"{idx}_{test_type.value}"
+                    test_case = self._parse_generated_test_case(
+                        generated_text, 
+                        team_name, 
+                        unique_hint=unique_hint,
+                        test_type=test_type
+                    )
+                    test_cases.append(test_case)
+                    
+                    # Cache the successful generation with test type tag
+                    self.cag_cache.cache_response(
+                        query=f"{requirement}_{test_type.value}",
+                        response=generated_text,
+                        context={'team': team_name, 'test_type': test_type.value},
+                        team_context=team_name,
+                        tags=['test_case', 'generated', test_type.value]
+                    )
+                    
+                except Exception as e:
+                    self._logger.error(
+                        f"Failed to parse {test_type.value} test case for requirement idx={idx}: {e}. Sample: {generated_text[:200]!r}"
+                    )
+                    continue
         
         return test_cases
 
@@ -417,6 +437,7 @@ Create a detailed test case with this exact format:
         requirements: List[str],
         suite_name: str,
         description: str = "",
+        test_types: List[TestCaseType] = None,
     ) -> 'TestSuite':
         """Generate a named suite (e.g., Regression, E2E) as a list of test cases.
 
@@ -425,24 +446,51 @@ Create a detailed test case with this exact format:
             requirements: Requirement strings to derive test cases from.
             suite_name: Human-friendly suite name, e.g., "Regression Suite".
             description: Optional suite description.
+            test_types: List of test case types to generate. If None, will infer from suite_name.
 
         Returns:
             TestSuite object with generated test cases.
         """
         from src.models.test_case_schemas import TestSuite  # local import to avoid cycles
-
-        cases = await self.generate_test_cases_for_team(team_name, requirements)
+        
+        # Infer test types from suite name if not provided
+        if test_types is None:
+            if "regression" in suite_name.lower():
+                test_types = [TestCaseType.REGRESSION]
+            elif "e2e" in suite_name.lower() or "end-to-end" in suite_name.lower():
+                test_types = [TestCaseType.INTEGRATION]
+            elif "performance" in suite_name.lower():
+                test_types = [TestCaseType.PERFORMANCE]
+            elif "unit" in suite_name.lower():
+                test_types = [TestCaseType.UNIT]
+            else:
+                test_types = [TestCaseType.FUNCTIONAL]
+        
+        self._logger.info(f"Generating {', '.join(t.value for t in test_types)} test cases for suite '{suite_name}'")
+        cases = await self.generate_test_cases_for_team(team_name, requirements, test_types=test_types)
         self._logger.info(
             f"Generated suite '{suite_name}' for team={team_name} with {len(cases)} cases"
         )
         return TestSuite(name=suite_name, description=description or suite_name, test_cases=cases)
     
-    def _parse_generated_test_case(self, generated_text: str, team_name: str, unique_hint: Optional[str] = None) -> 'TestCase':
+    def _parse_generated_test_case(self, generated_text: str, team_name: str, unique_hint: Optional[str] = None, test_type: TestCaseType = TestCaseType.FUNCTIONAL) -> 'TestCase':
         """Parse generated text into a structured TestCase object with safeguards.
 
         Raises a ValueError if the minimal contract (SUMMARY/STEPS/EXPECTED) is
         not present. Steps are parsed line-by-line with optional "->" expected
         result segments; when missing, a safe default is used.
+        
+        Args:
+            generated_text: The text generated by the model containing test case sections
+            team_name: The team context for the test case
+            unique_hint: Optional string to ensure uniqueness in the generated ID
+            test_type: The type of test case to create (FUNCTIONAL, REGRESSION, etc.)
+            
+        Returns:
+            A structured TestCase object
+            
+        Raises:
+            ValueError: If the text is missing required sections or is empty
         """
         if not generated_text or not isinstance(generated_text, str):
             raise ValueError("Empty or invalid generated text")
@@ -478,13 +526,19 @@ Create a detailed test case with this exact format:
 
         import hashlib
         # Deterministic ID derived from summary, team, and unique hint
-        uniq_src = f"{team_name}|{len(steps)}|{summary}|{unique_hint or ''}"
+        uniq_src = f"{team_name}|{len(steps)}|{summary}|{unique_hint or ''}|{test_type.value}"
         tc_id = f"{team_name}_{hashlib.md5(uniq_src.encode('utf-8')).hexdigest()[:8]}"
+        
+        # Determine priority based on test type
+        priority = TestCasePriority.MEDIUM
+        if test_type == TestCaseType.REGRESSION:
+            priority = TestCasePriority.HIGH
+        
         return TestCase(
             id=tc_id,
             summary=summary,
-            priority=TestCasePriority.MEDIUM,
-            test_type=TestCaseType.FUNCTIONAL,
+            priority=priority,
+            test_type=test_type,
             steps=steps,
             expected_results=expected,
             team_context=team_name

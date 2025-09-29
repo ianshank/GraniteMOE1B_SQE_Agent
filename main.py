@@ -59,7 +59,19 @@ def main() -> None:
         
         # Import and run the main system
         from src.main import main as granite_main
-        asyncio.run(granite_main())
+        
+        # Parse command line arguments
+        import argparse
+        parser = argparse.ArgumentParser(description="Granite Test Case Generator")
+        parser.add_argument("--config", type=str, default="config/model_config.yaml", help="Path to configuration file")
+        parser.add_argument("--multiple-suites", action="store_true", help="Generate multiple test suites (functional, regression, E2E)")
+        args = parser.parse_args()
+        
+        # Run the main function with command line arguments
+        asyncio.run(granite_main(
+            config_path=args.config,
+            generate_multiple_suites=args.multiple_suites
+        ))
         
         logger.info("Granite MoE Test Generator completed successfully")
         
