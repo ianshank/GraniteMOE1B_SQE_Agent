@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Lightweight training harness with telemetry instrumentation."""
 
 from __future__ import annotations
@@ -7,7 +6,7 @@ import argparse
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterable, Optional, Tuple
+from typing import Any, Dict, Iterable, Optional, Tuple, List, Union
 
 from dotenv import load_dotenv
 

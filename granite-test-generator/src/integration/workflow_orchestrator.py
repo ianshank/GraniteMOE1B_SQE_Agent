@@ -178,19 +178,51 @@ class WorkflowOrchestrator:
         logger.info(f"Team '{config.team_name}' registered with connector type: {type(config.connector).__name__}, "
                    f"RAG: {config.rag_enabled}, CAG: {config.cag_enabled}, auto_push: {config.auto_push}")
     
-    async def process_all_teams(self) -> Dict[str, List['TestCase']]:
-        """Process test case generation for all registered teams"""
+    async def process_all_teams(self, generate_multiple_suites: bool = False) -> Dict[str, List['TestCase']]:
+        """Process test case generation for all registered teams
+        
+        Args:
+            generate_multiple_suites: If True, generate functional, regression, and E2E test suites
+            
+        Returns:
+            Dictionary mapping team names to lists of generated test cases
+        """
         results = {}
         tasks = []
         logger.info(f"Starting test case generation for {len(self.team_configs)} registered teams.")
         
         if not self.team_configs:
             logger.warning("No teams registered for processing.")
-            return results
+            
+            # Check if we have any local requirements
+            from pathlib import Path
+            default_requirements_dir = Path("data/requirements")
+            if default_requirements_dir.exists() and any(default_requirements_dir.glob("**/*")):
+                logger.info("Found local requirements but no teams registered. Creating default team.")
+                from src.integration.team_connectors import LocalFileSystemConnector
+                
+                # Create a default team with local connector
+                default_team = TeamConfiguration(
+                    team_name="default",
+                    connector=LocalFileSystemConnector(
+                        input_directory=str(default_requirements_dir),
+                        output_directory="output"
+                    ),
+                    rag_enabled=True,
+                    cag_enabled=True,
+                    auto_push=False
+                )
+                
+                # Register the default team
+                self.team_configs["default"] = default_team
+                logger.info("Registered default team with local requirements.")
+            else:
+                # No teams and no local requirements
+                return results
         
         for team_name, config in self.team_configs.items():
             logger.debug(f"Creating processing task for team: {team_name}")
-            task = self._process_team(team_name, config)
+            task = self._process_team(team_name, config, generate_multiple_suites)
             tasks.append(task)
         
         logger.info(f"Executing {len(tasks)} team processing tasks in parallel.")
@@ -215,8 +247,17 @@ class WorkflowOrchestrator:
         logger.info(f"All teams processing completed. Successful: {successful_teams}, Failed: {failed_teams}")
         return results
     
-    async def _process_team(self, team_name: str, config: TeamConfiguration) -> List['TestCase']:
-        """Process test case generation for a single team"""
+    async def _process_team(self, team_name: str, config: TeamConfiguration, generate_multiple_suites: bool = False) -> List['TestCase']:
+        """Process test case generation for a single team
+        
+        Args:
+            team_name: Name of the team to process
+            config: Team configuration object
+            generate_multiple_suites: If True, generate functional, regression, and E2E test suites
+            
+        Returns:
+            List of generated test cases
+        """
         logger.info(f"Starting test case generation for team: {team_name}")
         start_time = time.time()
 
@@ -250,11 +291,49 @@ class WorkflowOrchestrator:
             if skipped:
                 logger.warning(f"Skipped {skipped} invalid requirements for team: {team_name}")
 
-            # Generate test cases using the agent
+            # Generate test cases using the agent - either multiple suites or just functional
             logger.info(f"Generating test cases for team: {team_name} with {len(requirements_text)} requirements")
-            test_cases = await self.agent.generate_test_cases_for_team(
-                team_name, requirements_text
-            )
+            
+            test_cases = []
+            if generate_multiple_suites:
+                from src.models.test_case_schemas import TestCaseType
+                
+                # Generate functional test cases
+                logger.info(f"Generating functional test cases for team: {team_name}")
+                functional_cases = await self.agent.generate_test_cases_for_team(
+                    team_name, 
+                    requirements_text,
+                    test_types=[TestCaseType.FUNCTIONAL]
+                )
+                test_cases.extend(functional_cases)
+                logger.info(f"Generated {len(functional_cases)} functional test cases for team: {team_name}")
+                
+                # Generate regression test cases
+                logger.info(f"Generating regression test cases for team: {team_name}")
+                regression_cases = await self.agent.generate_test_cases_for_team(
+                    team_name, 
+                    requirements_text,
+                    test_types=[TestCaseType.REGRESSION]
+                )
+                test_cases.extend(regression_cases)
+                logger.info(f"Generated {len(regression_cases)} regression test cases for team: {team_name}")
+                
+                # Generate integration/E2E test cases
+                logger.info(f"Generating integration/E2E test cases for team: {team_name}")
+                integration_cases = await self.agent.generate_test_cases_for_team(
+                    team_name, 
+                    requirements_text,
+                    test_types=[TestCaseType.INTEGRATION]
+                )
+                test_cases.extend(integration_cases)
+                logger.info(f"Generated {len(integration_cases)} integration/E2E test cases for team: {team_name}")
+            else:
+                # Generate only functional test cases (default behavior)
+                test_cases = await self.agent.generate_test_cases_for_team(
+                    team_name, 
+                    requirements_text
+                )
+            
             logger.info(f"Generated {len(test_cases)} test cases for team: {team_name}")
 
             # Add traceability and provenance

@@ -32,12 +32,12 @@ teams:
   - name: "ingest_team"
     connector:
       type: "github"
-      base_url: "https://your-company.atlassian.net"
-      username: "your-email@company.com"
-      api_token: "your-jira-token"
-      repo_owner: "your-org"
+      base_url: "${JIRA_BASE_URL}"
+      username: "${JIRA_USERNAME}"
+      api_token: "${JIRA_API_TOKEN}"
+      repo_owner: "${GITHUB_ORG}"
       repo_name: "ingest-repo"
-      token: "your-github-token"
+      token: "${GITHUB_TOKEN}"
     rag_enabled: true
     cag_enabled: true
     auto_push: false
@@ -45,9 +45,9 @@ teams:
   - name: "assets_team"
     connector:
       type: "github"
-      repo_owner: "your-org"
+      repo_owner: "${GITHUB_ORG}"
       repo_name: "assets-repo"
-      token: "your-github-token"
+      token: "${GITHUB_TOKEN}"
     rag_enabled: true
     cag_enabled: true
     auto_push: false
@@ -55,9 +55,9 @@ teams:
   - name: "cms_team"
     connector:
       type: "github"
-      repo_owner: "your-org"
+      repo_owner: "${GITHUB_ORG}"
       repo_name: "cms-repo"
-      token: "your-github-token"
+      token: "${GITHUB_TOKEN}"
     rag_enabled: true
     cag_enabled: true
     auto_push: false
@@ -65,9 +65,9 @@ teams:
   - name: "playback_team"
     connector:
       type: "github"
-      repo_owner: "your-org"
+      repo_owner: "${GITHUB_ORG}"
       repo_name: "playback-repo"
-      token: "your-github-token"
+      token: "${GITHUB_TOKEN}"
     rag_enabled: true
     cag_enabled: true
     auto_push: false
@@ -75,9 +75,9 @@ teams:
   - name: "ads_team"
     connector:
       type: "github"
-      repo_owner: "your-org"
+      repo_owner: "${GITHUB_ORG}"
       repo_name: "ads-repo"
-      token: "your-github-token"
+      token: "${GITHUB_TOKEN}"
     rag_enabled: true
     cag_enabled: true
     auto_push: false

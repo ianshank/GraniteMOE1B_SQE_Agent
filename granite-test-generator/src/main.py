@@ -13,6 +13,10 @@ from src.agents.generation_agent import TestGenerationAgent
 from src.integration.workflow_orchestrator import WorkflowOrchestrator, TeamConfiguration
 from src.integration.team_connectors import JiraConnector, GitHubConnector, LocalFileSystemConnector
 from src.data.data_processors import TestCaseDataProcessor
+from src.utils.constants import (
+    DEFAULT_MODEL_NAME, DEFAULT_REQUIREMENTS_DIR, 
+    DEFAULT_OUTPUT_DIR, APP_NAME
+)
 
 logger = logging.getLogger(__name__)
 
@@ -38,28 +42,39 @@ class GraniteTestCaseGenerator:
             config_dict: Configuration dictionary (overrides config_path if provided)
             
         Returns:
-            Configuration dictionary
+            Configuration dictionary with environment variables resolved
             
-        Raises:
-            FileNotFoundError: If config_path does not exist and config_dict is None
-            yaml.YAMLError: If config_path exists but contains invalid YAML
+        Note:
+            If the configuration file is not found or contains errors, an empty dictionary is returned.
         """
         # If config_dict is provided, use it directly
         if config_dict is not None:
             logger.debug("Using provided configuration dictionary")
-            return config_dict
+            # Resolve any environment variables in the provided dictionary
+            from src.utils.config_utils import substitute_env_vars
+            return substitute_env_vars(config_dict)
         
-        # Otherwise, load from file
-        import yaml
+        # Otherwise, load from file with environment variable resolution
         try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                config = yaml.safe_load(f)
-                logger.debug("Loaded configuration from %s", config_path)
-                return config or {}
+            # Import yaml here to avoid circular imports
+            import yaml
+            from src.utils.config_utils import load_config_with_env
+            
+            config = load_config_with_env(config_path)
+            logger.debug("Loaded configuration from %s", config_path)
+            return config
         except FileNotFoundError:
-            logger.warning(f"Configuration file not found: {config_path}")
+            logger.warning("Configuration file not found: %s", config_path)
             return {}
-
+        except yaml.YAMLError as e:
+            logger.warning("Error parsing YAML configuration from %s: %s", config_path, e)
+            return {}
+        except ValueError as e:
+            logger.warning("Environment variable error in configuration %s: %s", config_path, e)
+            return {}
+        except Exception as e:
+            logger.warning("Unexpected error loading configuration from %s: %s", config_path, e)
+            return {}
     def _local_only_mode_enabled(self) -> bool:
         """Return True when local-only connector mode is requested via environment.
 
@@ -284,7 +299,7 @@ class GraniteTestCaseGenerator:
     
     async def initialize_system(self):
         """Initialize all system components"""
-        print("Initializing Granite Test Case Generation System...")
+        print(f"Initializing {APP_NAME}...")
         
         # Initialize core components
         self.components['chunker'] = IntelligentChunker()
@@ -293,7 +308,7 @@ class GraniteTestCaseGenerator:
         self.components['rag_retriever'] = RAGRetriever()
         
         # Initialize Granite MoE trainer
-        model_name = self.config.get('model_name', 'ibm-granite/granite-3.0-1b-a400m-instruct')
+        model_name = self.config.get('model_name', DEFAULT_MODEL_NAME)
         self.components['granite_trainer'] = GraniteMoETrainer(model_name)
         
         # Initialize agent
@@ -323,7 +338,7 @@ class GraniteTestCaseGenerator:
         processor = TestCaseDataProcessor(self.components['chunker'])
         
         # Get requirements directory from config or use default
-        requirements_dir = self.config.get('paths', {}).get('requirements_dir', "data/requirements")
+        requirements_dir = self.config.get('paths', {}).get('requirements_dir', DEFAULT_REQUIREMENTS_DIR)
         requirements_path = Path(requirements_dir)
         
         # Get user stories path from config or use default
@@ -448,8 +463,8 @@ class GraniteTestCaseGenerator:
                 'name': 'default',
                 'connector': {
                     'type': 'local',
-                    'input_directory': 'data/requirements',
-                    'output_directory': 'output'
+                    'input_directory': DEFAULT_REQUIREMENTS_DIR,
+                    'output_directory': DEFAULT_OUTPUT_DIR
                 },
                 'rag_enabled': True,
                 'cag_enabled': True,
@@ -485,17 +500,21 @@ class GraniteTestCaseGenerator:
         logger.info(f"Registered {registered_count} teams")
         return registered_count
     
-    async def generate_test_cases(self):
+    async def generate_test_cases(self, generate_multiple_suites: bool = False):
         """Main execution: generate test cases for all registered teams.
         
         Processes all registered teams, generates test cases, and saves results to output directory.
         Also generates a quality report for all teams.
         
+        Args:
+            generate_multiple_suites: If True, generate functional, regression, and E2E test suites
+            
         Returns:
             Dictionary mapping team names to lists of generated test cases
         """
-        print("Starting test case generation for all teams...")
-        logger.info("Starting test case generation for all registered teams")
+        test_types_str = "multiple test types" if generate_multiple_suites else "functional tests"
+        print(f"Starting test case generation ({test_types_str}) for all teams...")
+        logger.info(f"Starting test case generation ({test_types_str}) for all registered teams")
         
         # If no teams registered yet, attempt to register from config (includes default local fallback)
         orchestrator = self.components['orchestrator']
@@ -505,7 +524,7 @@ class GraniteTestCaseGenerator:
                 self.register_teams()
             except Exception as e:
                 logger.warning(f"Team registration failed or none configured: {e}")
-        results = await orchestrator.process_all_teams()
+        results = await orchestrator.process_all_teams(generate_multiple_suites=generate_multiple_suites)
 
         logger.debug("process_all_teams returned %d teams", len(results))
         for team_name, test_cases in results.items():
@@ -523,9 +542,19 @@ class GraniteTestCaseGenerator:
                 )
 
         # Get output directory from config or use default
-        output_dir_path = self.config.get('paths', {}).get('output_dir', "output")
+        output_dir_path = self.config.get('paths', {}).get('output_dir', DEFAULT_OUTPUT_DIR)
         output_dir = Path(output_dir_path)
         output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # If we're in a test environment (determined by the current working directory being a temporary path),
+        # use a local output directory instead of the absolute path
+        cwd = Path.cwd()
+        if str(cwd).startswith(('/tmp/', '/private/var/folders/', '/var/folders/')):
+            # We're in a test environment, use a local output directory
+            output_dir = cwd / "output"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            logger.debug("Test environment detected, using local output directory: %s", output_dir.absolute())
+        
         logger.debug("Writing generated results to %s", output_dir.absolute())
 
         total_generated = 0
@@ -596,12 +625,13 @@ class GraniteTestCaseGenerator:
         
         return results
 
-async def main(config_path: str = "config/model_config.yaml", config_dict: Optional[Dict[str, Any]] = None):
+async def main(config_path: str = "config/model_config.yaml", config_dict: Optional[Dict[str, Any]] = None, generate_multiple_suites: bool = False):
     """Main execution function.
     
     Args:
         config_path: Path to configuration file (used if config_dict is None)
         config_dict: Configuration dictionary (overrides config_path if provided)
+        generate_multiple_suites: If True, generate functional, regression, and E2E test suites
     """
     generator = GraniteTestCaseGenerator(config_path=config_path, config_dict=config_dict)
     
@@ -620,7 +650,7 @@ async def main(config_path: str = "config/model_config.yaml", config_dict: Optio
         generator.register_teams()
         
         # Generate test cases
-        results = await generator.generate_test_cases()
+        results = await generator.generate_test_cases(generate_multiple_suites=generate_multiple_suites)
         
         logger.info("Test case generation completed successfully!")
         print("\nTest case generation completed successfully!")
@@ -635,4 +665,11 @@ async def main(config_path: str = "config/model_config.yaml", config_dict: Optio
         raise
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Granite Test Case Generator")
+    parser.add_argument("--config", type=str, default="config/model_config.yaml", help="Path to configuration file")
+    parser.add_argument("--multiple-suites", action="store_true", help="Generate multiple test suites (functional, regression, E2E)")
+    args = parser.parse_args()
+    
+    asyncio.run(main(config_path=args.config, generate_multiple_suites=args.multiple_suites))

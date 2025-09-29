@@ -1,0 +1,86 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.5, pytest-8.3.2, pluggy-1.5.0 -- /opt/anaconda3/bin/python
+cachedir: .pytest_cache
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /Users/iancruickshank/GraniteMOE1B_SQE_Agent
+configfile: pytest.ini
+plugins: anyio-4.11.0, cov-5.0.0, asyncio-1.1.0, dash-3.2.0, Faker-37.6.0, benchmark-5.1.0, langsmith-0.4.21, mock-3.14.0
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... 
+----------------------------- live log collection ------------------------------
+INFO     numexpr.utils:utils.py:161 NumExpr defaulting to 10 threads.
+INFO     test_metrics:test_metrics.py:33 scikit-learn available for reference metric calculation
+INFO     test_evaluation_helpers:test_evaluation_helpers.py:32 PyTorch available for testing
+INFO     test_end_to_end_workflow:test_end_to_end_workflow.py:37 PyTorch available for end-to-end testing
+INFO     test_wandb_api_contract:test_wandb_api_contract.py:34 W&B module available for contract testing
+ERROR    test_wandb_api_contract:test_wandb_api_contract.py:46 Failed to import WandBClient from sync_wandb_runs.py
+collected 102 items
+
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[True-True] PASSED [  0%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[False-False] PASSED [  1%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[1-True0] PASSED [  2%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[0-False0] PASSED [  3%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[true-True] PASSED [  4%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[false-False] PASSED [  5%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[yes-True] PASSED [  6%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[no-False] PASSED [  7%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[1-True1] PASSED [  8%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[0-False1] PASSED [  9%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[t-True] PASSED [ 10%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[f-False] PASSED [ 11%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[y-True] PASSED [ 12%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[n-False] PASSED [ 13%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[on-True] PASSED [ 14%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[off-False] PASSED [ 15%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[TRUE-True] PASSED [ 16%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[FALSE-False] PASSED [ 17%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[   yes   -True] PASSED [ 18%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[   no   -False] PASSED [ 19%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[None-None] PASSED [ 20%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[invalid-None] PASSED [ 21%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[value22-None] PASSED [ 22%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[value23-None] PASSED [ 23%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[tag1,tag2,tag3-expected0] PASSED [ 24%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[tag1, tag2, tag3-expected1] PASSED [ 25%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[-expected2] PASSED [ 26%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[None-expected3] PASSED [ 27%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[value4-expected4] PASSED [ 28%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[value5-expected5] PASSED [ 29%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[value6-expected6] PASSED [ 30%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[123-expected7] FAILED [ 31%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[value8-expected8] PASSED [ 32%]
+tests/unit/test_telemetry_config.py::TestTelemetryConfig::test_default_config PASSED [ 33%]
+tests/unit/test_telemetry_config.py::TestTelemetryConfig::test_tb_log_dir_validation PASSED [ 34%]
+tests/unit/test_telemetry_config.py::TestTelemetryConfig::test_tags_normalization PASSED [ 35%]
+tests/unit/test_telemetry_config.py::TestTelemetryConfig::test_merged_with PASSED [ 36%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_load_from_env PASSED [ 37%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_load_from_cli_args PASSED [ 38%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_cli_overrides_env PASSED [ 39%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_invalid_log_interval_steps 
+-------------------------------- live log call ---------------------------------
+WARNING  src.config.telemetry:telemetry.py:140 Invalid log interval override invalid
+FAILED                                                                   [ 40%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_object_with_attributes PASSED [ 41%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_file_system_artifacts 
+-------------------------------- live log call ---------------------------------
+INFO     src.telemetry.experiment:experiment.py:222 TensorBoard writer initialised at /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-115/test_file_system_artifacts0/runs
+FAILED                                                                   [ 42%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_metrics_with_different_types 
+-------------------------------- live log call ---------------------------------
+INFO     src.telemetry.experiment:experiment.py:222 TensorBoard writer initialised at /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-115/test_metrics_with_different_ty0/runs
+PASSED                                                                   [ 43%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_run_name_generation FAILED [ 44%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_git_sha_detection PASSED [ 45%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_number_validation PASSED [ 46%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_artifact_with_nonexistent_path 
+-------------------------------- live log call ---------------------------------
+WARNING  src.telemetry.experiment:experiment.py:110 Artifact path /path/does/not/exist.txt does not exist; skipping upload
+PASSED                                                                   [ 47%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_graceful_multiple_finish PASSED [ 48%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_no_metrics PASSED [ 49%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_experiment_logger_with_real_directory_structure FAILED [ 50%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_binary_classification FAILED [ 50%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_multiclass_classification FAILED [ 51%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_empty_predictions PASSED [ 52%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_mismatched_lengths PASSED [ 53%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_probabilities_without_sklearn 

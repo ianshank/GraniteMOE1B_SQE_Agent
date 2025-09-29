@@ -1,0 +1,51 @@
+/opt/anaconda3/lib/python3.13/site-packages/pytest_asyncio/plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+Traceback (most recent call last):
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  [Previous line repeated 997 more times]
+RecursionError: maximum recursion depth exceeded
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  [Previous line repeated 997 more times]
+RecursionError: maximum recursion depth exceeded
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  [Previous line repeated 997 more times]
+RecursionError: maximum recursion depth exceeded
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  [Previous line repeated 997 more times]
+RecursionError: maximum recursion depth exceeded
+Exception ignored in atexit callback <function dump_compile_times at 0x3085002c0>:
+Traceback (most recent call last):
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  [Previous line repeated 997 more times]
+RecursionError: maximum recursion depth exceeded
+Exception ignored in atexit callback <bound method finalize._exitfunc of <class 'weakref.finalize'>>:
+Traceback (most recent call last):
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  File "/Users/iancruickshank/GraniteMOE1B_SQE_Agent/tests/unit/test_metrics.py", line 143, in mock_import
+  [Previous line repeated 997 more times]
+RecursionError: maximum recursion depth exceeded

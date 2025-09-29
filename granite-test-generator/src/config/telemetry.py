@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Iterable, List, Mapping, MutableMapping, Optional
+from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -70,14 +70,24 @@ def _split_tags(raw_tags: Optional[Any]) -> List[str]:
 class TelemetryConfig(BaseModel):
     """Declarative telemetry configuration for experiment tracking."""
 
+    # W&B settings
     enable_wandb: bool = Field(default=False)
     wandb_project: Optional[str] = Field(default=None)
     wandb_entity: Optional[str] = Field(default=None)
     wandb_run_name: Optional[str] = Field(default=None)
     wandb_tags: List[str] = Field(default_factory=list)
+    wandb_group: Optional[str] = Field(default=None)
+    wandb_job_type: Optional[str] = Field(default=None)
+    wandb_name: Optional[str] = Field(default=None)
+    wandb_notes: Optional[str] = Field(default=None)
+    
+    # TensorBoard settings
     enable_tensorboard: bool = Field(default=False)
     tb_log_dir: str = Field(default="runs/")
+    
+    # General settings
     log_interval_steps: int = Field(default=50, ge=1)
+    log_artifacts: bool = Field(default=True)
 
     @validator("tb_log_dir")
     def _validate_tb_log_dir(cls, value: str) -> str:
@@ -119,6 +129,7 @@ class TelemetryConfig(BaseModel):
 def load_telemetry_from_sources(
     cli_args: Optional[Mapping[str, Any]] = None,
     env: Optional[Mapping[str, str]] = None,
+    config_snapshot: Optional[Dict[str, Any]] = None,
 ) -> TelemetryConfig:
     """Materialise ``TelemetryConfig`` from CLI arguments and environment variables."""
     env = dict(env or os.environ)
@@ -134,9 +145,14 @@ def load_telemetry_from_sources(
         wandb_entity=env.get("WANDB_ENTITY"),
         wandb_run_name=env.get("WANDB_RUN_NAME"),
         wandb_tags=_split_tags(env_tags),
+        wandb_group=env.get("WANDB_GROUP"),
+        wandb_job_type=env.get("WANDB_JOB_TYPE"),
+        wandb_name=env.get("WANDB_NAME"),
+        wandb_notes=env.get("WANDB_NOTES"),
         enable_tensorboard=env_enable_tb or False,
         tb_log_dir=env.get("TB_LOG_DIR", "runs/"),
         log_interval_steps=int(env.get("LOG_INTERVAL_STEPS", 50)),
+        log_artifacts=env.get("LOG_ARTIFACTS", "").lower() not in ("0", "false", "no"),
     )
 
     if not cli_args:
@@ -161,8 +177,13 @@ def load_telemetry_from_sources(
         "wandb_entity",
         "wandb_run_name",
         "wandb_tags",
+        "wandb_group",
+        "wandb_job_type",
+        "wandb_name",
+        "wandb_notes",
         "tb_log_dir",
         "log_interval_steps",
+        "log_artifacts",
     ):
         value = _get(cli_args, key)
         if value is not None:
@@ -181,4 +202,16 @@ def load_telemetry_from_sources(
             LOGGER.warning("Invalid log interval override %s", overrides["log_interval_steps"])
             overrides.pop("log_interval_steps", None)
 
-    return base_cfg.merged_with(**overrides)
+    result = base_cfg.merged_with(**overrides)
+    
+    # Add config snapshot to notes if provided
+    if config_snapshot and result.enable_wandb:
+        import json
+
+        notes = result.wandb_notes or ""
+        if notes:
+            notes += "\n\n"
+        notes += f"Config: {json.dumps(config_snapshot, indent=2)}"
+        result.wandb_notes = notes
+
+    return result

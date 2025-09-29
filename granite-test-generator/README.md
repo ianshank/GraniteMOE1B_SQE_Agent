@@ -99,16 +99,31 @@ granite-test-generator/
 
 ### 1. Configure Your Environment
 
-Create a `config/model_config.yaml`:
+**Option A: Using .env file (Recommended for Development)**
 
+1. Copy the environment template:
+```bash
+cp .env.template .env
+```
+
+2. Edit `.env` with your actual values:
+```bash
+GITHUB_TOKEN=your-github-token
+JIRA_API_TOKEN=your-jira-api-token
+GITHUB_ORG=your-organization
+JIRA_BASE_URL=https://your-instance.atlassian.net
+```
+
+3. Configuration will automatically use environment variables:
 ```yaml
+# config/model_config.yaml
 model_name: "ibm-granite/granite-3.0-1b-a400m-instruct"
 teams:
   - name: "backend-team"
     connector:
       type: "jira"
-      base_url: "https://your-instance.atlassian.net"
-      username: "your-email@example.com"
+      base_url: "${JIRA_BASE_URL}"
+      username: "${JIRA_USERNAME}"
       api_token: "${JIRA_API_TOKEN}"
       project_key: "BACKEND"
     rag_enabled: true
@@ -116,14 +131,15 @@ teams:
     auto_push: false
 ```
 
-### 2. Set Environment Variables
+**Option B: Direct Environment Variables (Production)**
 
 ```bash
 export JIRA_API_TOKEN="your-jira-api-token"
 export GITHUB_TOKEN="your-github-token"
+export GITHUB_ORG="your-organization"
 ```
 
-### 3. Run Test Case Generation
+### 2. Run Test Case Generation
 
 ```python
 # Run the complete pipeline
@@ -242,6 +258,8 @@ trainer = GraniteMoETrainer()  # Uses MLX on Apple Silicon
 - **ChromaDB**: Vector storage for RAG document persistence
 
 ## Configuration
+
+> **📖 For detailed configuration options, environment variables, and best practices, see [Configuration Guide](docs/CONFIGURATION.md)**
 
 ### Model Configuration (`config/model_config.yaml`)
 

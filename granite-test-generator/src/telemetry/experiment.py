@@ -9,7 +9,7 @@ import time
 from contextlib import AbstractContextManager
 from datetime import datetime, UTC
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional, Union
 
 from src.config.telemetry import TelemetryConfig
 
@@ -22,7 +22,7 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
     def __init__(
         self,
         telemetry_cfg: TelemetryConfig,
-        config_snapshot: Mapping[str, Any],
+        config_snapshot: Optional[Mapping[str, Any]] = None,
         run_name: Optional[str] = None,
     ) -> None:
         """
@@ -34,7 +34,7 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
             run_name: Optional explicit run name
         """
         self._cfg = telemetry_cfg
-        self._config_snapshot = dict(config_snapshot)
+        self._config_snapshot = dict(config_snapshot) if config_snapshot else {}
         self._run_name = run_name
         self._wandb_run: Optional[Any] = None
         self._tb_writer: Optional[Any] = None
@@ -135,16 +135,22 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
             name: Optional name for the artifact
             type: Type of artifact (e.g., "model", "dataset")
         """
+        if not self._cfg.log_artifacts:
+            LOGGER.info(f"Artifact logging disabled, skipping: {path}")
+            return
+
         file_path = Path(path)
         if not file_path.exists():
             LOGGER.warning("Artifact path %s does not exist; skipping upload", file_path)
             return
 
+        artifact_name = name or file_path.name
+
         if self._wandb_run is not None:
             try:
                 import wandb  # type: ignore
 
-                artifact = wandb.Artifact(name=name or file_path.name, type=type)
+                artifact = wandb.Artifact(name=artifact_name, type=type)
                 artifact.add_file(str(file_path))
                 self._wandb_run.log_artifact(artifact)
                 LOGGER.info("Logged artifact %s to W&B", file_path)
@@ -210,7 +216,7 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
             return
 
         entity = self._cfg.wandb_entity or os.getenv("WANDB_ENTITY")
-        run_name = self._cfg.wandb_run_name or self._run_name
+        run_name = self._cfg.wandb_run_name or self._cfg.wandb_name or self._run_name
         tags = list(dict.fromkeys(self._cfg.wandb_tags))
         if self._git_sha:
             tags.append(self._git_sha)
@@ -235,6 +241,9 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
                 entity=entity,
                 name=run_name,
                 tags=tags or None,
+                group=self._cfg.wandb_group,
+                job_type=self._cfg.wandb_job_type,
+                notes=self._cfg.wandb_notes,
                 config=dict(self._config_snapshot),
                 reinit=True,
                 settings=settings,

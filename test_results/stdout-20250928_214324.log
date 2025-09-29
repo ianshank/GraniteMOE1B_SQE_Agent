@@ -1,0 +1,1101 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.5, pytest-8.3.2, pluggy-1.5.0 -- /opt/anaconda3/bin/python
+cachedir: .pytest_cache
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /Users/iancruickshank/GraniteMOE1B_SQE_Agent
+configfile: pytest.ini
+plugins: anyio-4.11.0, cov-5.0.0, asyncio-1.1.0, dash-3.2.0, Faker-37.6.0, benchmark-5.1.0, langsmith-0.4.21, mock-3.14.0
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... 
+----------------------------- live log collection ------------------------------
+INFO     numexpr.utils:utils.py:161 NumExpr defaulting to 10 threads.
+INFO     test_metrics:test_metrics.py:33 scikit-learn available for reference metric calculation
+INFO     test_evaluation_helpers:test_evaluation_helpers.py:32 PyTorch available for testing
+collected 85 items
+
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[True-True] PASSED [  1%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[False-False] PASSED [  2%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[1-True0] PASSED [  3%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[0-False0] PASSED [  4%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[true-True] PASSED [  5%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[false-False] PASSED [  7%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[yes-True] PASSED [  8%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[no-False] PASSED [  9%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[1-True1] PASSED [ 10%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[0-False1] PASSED [ 11%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[t-True] PASSED [ 12%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[f-False] PASSED [ 14%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[y-True] PASSED [ 15%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[n-False] PASSED [ 16%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[on-True] PASSED [ 17%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[off-False] PASSED [ 18%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[TRUE-True] PASSED [ 20%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[FALSE-False] PASSED [ 21%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[   yes   -True] PASSED [ 22%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[   no   -False] PASSED [ 23%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[None-None] PASSED [ 24%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[invalid-None] PASSED [ 25%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[value22-None] PASSED [ 27%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[value23-None] PASSED [ 28%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[tag1,tag2,tag3-expected0] PASSED [ 29%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[tag1, tag2, tag3-expected1] PASSED [ 30%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[-expected2] PASSED [ 31%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[None-expected3] PASSED [ 32%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[value4-expected4] PASSED [ 34%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[value5-expected5] PASSED [ 35%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[value6-expected6] PASSED [ 36%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[123-expected7] FAILED [ 37%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[value8-expected8] PASSED [ 38%]
+tests/unit/test_telemetry_config.py::TestTelemetryConfig::test_default_config PASSED [ 40%]
+tests/unit/test_telemetry_config.py::TestTelemetryConfig::test_tb_log_dir_validation PASSED [ 41%]
+tests/unit/test_telemetry_config.py::TestTelemetryConfig::test_tags_normalization PASSED [ 42%]
+tests/unit/test_telemetry_config.py::TestTelemetryConfig::test_merged_with PASSED [ 43%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_load_from_env PASSED [ 44%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_load_from_cli_args PASSED [ 45%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_cli_overrides_env PASSED [ 47%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_invalid_log_interval_steps 
+-------------------------------- live log call ---------------------------------
+WARNING  src.config.telemetry:telemetry.py:140 Invalid log interval override invalid
+FAILED                                                                   [ 48%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_object_with_attributes PASSED [ 49%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_file_system_artifacts 
+-------------------------------- live log call ---------------------------------
+INFO     src.telemetry.experiment:experiment.py:222 TensorBoard writer initialised at /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-119/test_file_system_artifacts0/runs
+FAILED                                                                   [ 50%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_metrics_with_different_types 
+-------------------------------- live log call ---------------------------------
+INFO     src.telemetry.experiment:experiment.py:222 TensorBoard writer initialised at /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-119/test_metrics_with_different_ty0/runs
+PASSED                                                                   [ 51%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_run_name_generation FAILED [ 52%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_git_sha_detection PASSED [ 54%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_number_validation PASSED [ 55%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_artifact_with_nonexistent_path 
+-------------------------------- live log call ---------------------------------
+WARNING  src.telemetry.experiment:experiment.py:110 Artifact path /path/does/not/exist.txt does not exist; skipping upload
+PASSED                                                                   [ 56%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_graceful_multiple_finish PASSED [ 57%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_no_metrics PASSED [ 58%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_experiment_logger_with_real_directory_structure FAILED [ 60%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_binary_classification PASSED [ 61%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_multiclass_classification FAILED [ 62%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_empty_predictions PASSED [ 63%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_mismatched_lengths PASSED [ 64%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_probabilities_without_sklearn FAILED [ 65%]
+tests/unit/test_metrics.py::TestRegressionMetrics::test_basic_regression PASSED [ 67%]
+tests/unit/test_metrics.py::TestRegressionMetrics::test_perfect_predictions PASSED [ 68%]
+tests/unit/test_metrics.py::TestRegressionMetrics::test_constant_predictions PASSED [ 69%]
+tests/unit/test_metrics.py::TestRegressionMetrics::test_empty_predictions_regression PASSED [ 70%]
+tests/unit/test_metrics.py::TestRegressionMetrics::test_mismatched_lengths_regression PASSED [ 71%]
+tests/unit/test_metrics.py::TestTextGenerationMetrics::test_basic_text_metrics FAILED [ 72%]
+tests/unit/test_metrics.py::TestTextGenerationMetrics::test_multiple_references FAILED [ 74%]
+tests/unit/test_metrics.py::TestTextGenerationMetrics::test_empty_text_predictions PASSED [ 75%]
+tests/unit/test_metrics.py::TestTextGenerationMetrics::test_mismatched_lengths_text PASSED [ 76%]
+tests/unit/test_metrics.py::TestTextGenerationMetrics::test_invalid_references_format PASSED [ 77%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_split_batch_tuple PASSED [ 78%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_split_batch_dict PASSED [ 80%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_split_batch_dict_alternative_keys PASSED [ 81%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_split_batch_error_missing_keys PASSED [ 82%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_split_batch_error_wrong_type PASSED [ 83%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_forward_callable_model PASSED [ 84%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_forward_model_with_eval_step PASSED [ 85%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_forward_error_invalid_model PASSED [ 87%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_flatten_simple_values PASSED [ 88%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_flatten_lists PASSED [ 89%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_flatten_torch_tensor PASSED [ 90%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_flatten_probabilities PASSED [ 91%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_flatten_probabilities_torch FAILED [ 92%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_percentile PASSED [ 94%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_is_number PASSED [ 95%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_evaluate_classification 
+-------------------------------- live log call ---------------------------------
+INFO     src.eval.evaluate:evaluate.py:126 Saved evaluation report to /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-119/test_evaluate_classification0/eval_results/eval_report.json
+FAILED                                                                   [ 96%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_evaluate_regression 
+-------------------------------- live log call ---------------------------------
+WARNING  src.eval.evaluate:evaluate.py:114 Error computing metrics: Predictions and targets must share the same length: 10 vs 5
+INFO     src.eval.evaluate:evaluate.py:126 Saved evaluation report to /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-119/test_evaluate_regression0/regression_results/eval_report.json
+FAILED                                                                   [ 97%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_evaluate_text FAILED [ 98%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_evaluate_error_invalid_task 
+-------------------------------- live log call ---------------------------------
+WARNING  src.eval.evaluate:evaluate.py:114 Error computing metrics: Unsupported task type: invalid_task
+INFO     src.eval.evaluate:evaluate.py:126 Saved evaluation report to artifacts/eval/eval_report.json
+FAILED                                                                   [100%]
+
+=================================== FAILURES ===================================
+_______________ TestTagSplitting.test_split_tags[123-expected7] ________________
+
+self = <test_telemetry_config.TestTagSplitting object at 0x105a1e250>
+value = 123, expected = ['123']
+
+    @pytest.mark.parametrize(
+        "value,expected",
+        [
+            ("tag1,tag2,tag3", ["tag1", "tag2", "tag3"]),
+            ("tag1, tag2, tag3", ["tag1", "tag2", "tag3"]),
+            ("", []),
+            (None, []),
+            (["tag1", "tag2"], ["tag1", "tag2"]),
+            (["tag1,tag2", "tag3"], ["tag1", "tag2", "tag3"]),
+            (["", "tag1", "", "tag2"], ["tag1", "tag2"]),
+            (123, ["123"]),  # Non-string/list values are converted to string
+            (["tag1", 123], ["tag1", "123"]),
+        ],
+    )
+    def test_split_tags(self, value: Any, expected: list[str]) -> None:
+        """Verify tag splitting handles various input formats correctly."""
+        result = _split_tags(value)
+        logger.debug("_split_tags(%r) = %r (expected: %r)", value, result, expected)
+>       assert result == expected
+E       AssertionError: assert [] == ['123']
+E         
+E         Right contains one more item: '123'
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     '123',
+E         - ]
+
+tests/unit/test_telemetry_config.py:93: AssertionError
+_________ TestLoadTelemetryFromSources.test_invalid_log_interval_steps _________
+
+self = <test_telemetry_config.TestLoadTelemetryFromSources object at 0x105a17360>
+
+    def test_invalid_log_interval_steps(self) -> None:
+        """Test handling of invalid log interval steps."""
+        # Test with invalid string
+        cli_args = {"log_interval_steps": "invalid"}
+        config = load_telemetry_from_sources(cli_args=cli_args)
+        assert config.log_interval_steps == 50  # Default value
+    
+        # Test with negative value
+        cli_args = {"log_interval_steps": -10}
+>       config = load_telemetry_from_sources(cli_args=cli_args)
+
+tests/unit/test_telemetry_config.py:232: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/config/telemetry.py:143: in load_telemetry_from_sources
+    return base_cfg.merged_with(**overrides)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TelemetryConfig(enable_wandb=False, wandb_project='telemetry-tests', wandb_entity=None, wandb_run_name=None, wandb_tags=[], enable_tensorboard=False, tb_log_dir='test_runs', log_interval_steps=50)
+overrides = {'log_interval_steps': -10}
+data = {'enable_tensorboard': False, 'enable_wandb': False, 'log_interval_steps': -10, 'tb_log_dir': 'test_runs', ...}
+
+    def merged_with(self, **overrides: Any) -> "TelemetryConfig":
+        data = self.dict()
+        data.update({k: v for k, v in overrides.items() if v is not None})
+>       return TelemetryConfig(**data)
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for TelemetryConfig
+E       log_interval_steps
+E         Input should be greater than or equal to 1 [type=greater_than_equal, input_value=-10, input_type=int]
+E           For further information visit https://errors.pydantic.dev/2.8/v/greater_than_equal
+
+src/config/telemetry.py:78: ValidationError
+------------------------------ Captured log call -------------------------------
+WARNING  src.config.telemetry:telemetry.py:140 Invalid log interval override invalid
+_______________ TestExperimentLogger.test_file_system_artifacts ________________
+
+self = <test_experiment_logger.TestExperimentLogger object at 0x105a120d0>
+tmp_path = PosixPath('/private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-119/test_file_system_artifacts0')
+
+    def test_file_system_artifacts(self, tmp_path: Path) -> None:
+        """Test handling of file system artifacts."""
+        # Create test files
+        artifact_dir = tmp_path / "artifacts"
+        artifact_dir.mkdir()
+        test_file = artifact_dir / "test_file.txt"
+        test_file.write_text("This is a test file")
+    
+        # Create JSON file
+        json_file = artifact_dir / "metrics.json"
+        json_data = {"accuracy": 0.92, "f1": 0.88}
+        with open(json_file, "w") as f:
+            json.dump(json_data, f)
+    
+        # Configure logger with TensorBoard enabled
+        config = TelemetryConfig(
+            enable_tensorboard=True,
+            tb_log_dir=str(tmp_path / "runs"),
+        )
+    
+        # Use real filesystem interactions
+        with ExperimentLogger(config, {"model": {"type": "test"}}) as logger:
+            # Log artifacts
+            logger.log_artifact(test_file)
+            logger.log_artifact(json_file, name="results", type="metrics")
+    
+            # Log metrics and parameters
+            logger.log_metrics(1, accuracy=0.92, f1=0.88)
+            logger.log_params(learning_rate=0.01, batch_size=32)
+            logger.set_summary(final_accuracy=0.95)
+    
+        # Verify TensorBoard output directory was created
+        tb_dir = tmp_path / "runs"
+        assert tb_dir.exists()
+        assert any(tb_dir.glob("*"))  # Should contain at least one file
+>       logger.debug(f"TensorBoard directory contents: {list(tb_dir.glob('*'))}")
+E       AttributeError: 'ExperimentLogger' object has no attribute 'debug'
+
+tests/unit/test_experiment_logger.py:78: AttributeError
+------------------------------ Captured log call -------------------------------
+INFO     src.telemetry.experiment:experiment.py:222 TensorBoard writer initialised at /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-119/test_file_system_artifacts0/runs
+________________ TestExperimentLogger.test_run_name_generation _________________
+
+self = <test_experiment_logger.TestExperimentLogger object at 0x105a17bb0>
+
+    def test_run_name_generation(self) -> None:
+        """Test automatic run name generation."""
+        # Test with minimal config
+        config = TelemetryConfig()
+        logger1 = ExperimentLogger(config, {"model": {"type": "test"}})
+        name1 = logger1._run_name
+>       assert name1.startswith("test-dataset-")
+E       AttributeError: 'NoneType' object has no attribute 'startswith'
+
+tests/unit/test_experiment_logger.py:130: AttributeError
+__ TestExperimentLogger.test_experiment_logger_with_real_directory_structure ___
+
+self = <test_experiment_logger.TestExperimentLogger object at 0x10612b750>
+tmp_path = PosixPath('/private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-119/test_experiment_logger_with_re0')
+
+    def test_experiment_logger_with_real_directory_structure(self, tmp_path: Path) -> None:
+        """Test ExperimentLogger with a real directory structure."""
+        # Create directory structure
+        output_dir = tmp_path / "experiment"
+        checkpoints_dir = output_dir / "checkpoints"
+        checkpoints_dir.mkdir(parents=True)
+    
+        # Create a checkpoint file
+        checkpoint_file = checkpoints_dir / "model.pt"
+        checkpoint_file.write_text("dummy checkpoint")
+    
+        # Create an evaluation report
+        eval_dir = output_dir / "eval"
+        eval_dir.mkdir()
+        eval_report = eval_dir / "eval_report.json"
+        eval_data = {"accuracy": 0.95, "f1": 0.93}
+        with open(eval_report, "w") as f:
+            json.dump(eval_data, f)
+    
+        # Configure telemetry
+        config = TelemetryConfig(
+            enable_tensorboard=True,
+            tb_log_dir=str(tmp_path / "tb_logs"),
+        )
+    
+        # Create a complete experiment workflow
+>       with ExperimentLogger(config, {"model": "test"}) as logger:
+
+tests/unit/test_experiment_logger.py:261: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/telemetry/experiment.py:38: in __enter__
+    self.start_run()
+src/telemetry/experiment.py:48: in start_run
+    self._run_name = self._run_name or self._derive_run_name()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <src.telemetry.experiment.ExperimentLogger object at 0x146ec34d0>
+
+    def _derive_run_name(self) -> str:
+>       model_name = self._config_snapshot.get("model", {}).get("type") or self._config_snapshot.get("model_name", "model")
+E       AttributeError: 'str' object has no attribute 'get'
+
+src/telemetry/experiment.py:228: AttributeError
+___________ TestClassificationMetrics.test_multiclass_classification ___________
+
+self = <test_metrics.TestClassificationMetrics object at 0x1245ef9d0>
+
+    def test_multiclass_classification(self) -> None:
+        """Test metrics for multiclass classification."""
+        preds = [0, 1, 2, 0, 1, 2, 0, 1, 2]
+        targets = [0, 1, 2, 1, 1, 2, 2, 1, 0]
+    
+        # One-hot encoded probabilities for multiclass
+        probs = [
+            [0.8, 0.1, 0.1],  # Pred 0 with 0.8 confidence
+            [0.1, 0.7, 0.2],  # Pred 1 with 0.7 confidence
+            [0.0, 0.3, 0.7],  # Pred 2 with 0.7 confidence
+            [0.6, 0.3, 0.1],  # Pred 0 with 0.6 confidence
+            [0.2, 0.6, 0.2],  # Pred 1 with 0.6 confidence
+            [0.1, 0.2, 0.7],  # Pred 2 with 0.7 confidence
+            [0.5, 0.3, 0.2],  # Pred 0 with 0.5 confidence
+            [0.3, 0.5, 0.2],  # Pred 1 with 0.5 confidence
+            [0.1, 0.1, 0.8],  # Pred 2 with 0.8 confidence
+        ]
+    
+        metrics = compute_classification_metrics(preds, targets, probs)
+        logger.debug(f"Multiclass classification metrics: {metrics}")
+    
+        # Check basic metrics
+        assert "accuracy" in metrics
+>       assert math.isclose(metrics["accuracy"], 5/9)  # 5 correct out of 9
+E       assert False
+E        +  where False = <built-in function isclose>(0.6666666666666666, (5 / 9))
+E        +    where <built-in function isclose> = math.isclose
+
+tests/unit/test_metrics.py:104: AssertionError
+_________ TestClassificationMetrics.test_probabilities_without_sklearn _________
+
+self = <test_metrics.TestClassificationMetrics object at 0x145b8d250>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x146f53ce0>
+
+    def test_probabilities_without_sklearn(self, monkeypatch) -> None:
+        """Test handling of probabilities when sklearn is not available."""
+        if not HAS_SKLEARN:
+            pytest.skip("sklearn already unavailable, cannot test fallback")
+    
+        # Temporarily make sklearn.metrics unavailable
+        original_import = __import__
+    
+        def mock_import(name, *args, **kwargs):
+            if name == "sklearn.metrics":
+                raise ImportError("Mock import error")
+            return original_import(name, *args, **kwargs)
+    
+        monkeypatch.setattr("builtins.__import__", mock_import)
+    
+        # Run with probabilities
+        preds = [0, 1, 1, 0]
+        targets = [0, 1, 0, 0]
+        probabilities = [0.2, 0.7, 0.6, 0.3]
+    
+        # Import again after monkeypatching
+        from src.eval.metrics import compute_classification_metrics
+    
+        metrics = compute_classification_metrics(preds, targets, probabilities)
+        logger.debug(f"Metrics with sklearn unavailable: {metrics}")
+    
+        # Should still have basic metrics but not advanced ones like AUC
+        assert "accuracy" in metrics
+        assert "f1_macro" in metrics
+>       assert "roc_auc" not in metrics
+E       AssertionError: assert 'roc_auc' not in {'accuracy': 0.75, 'f1_macro': 0.7333333333333334, 'f1_micro': 0.75, 'f1_weighted': 0.7666666666666667, ...}
+
+tests/unit/test_metrics.py:163: AssertionError
+______________ TestTextGenerationMetrics.test_basic_text_metrics _______________
+
+self = <test_metrics.TestTextGenerationMetrics object at 0x1459065d0>
+
+    def test_basic_text_metrics(self) -> None:
+        """Test basic text generation metrics."""
+        preds = [
+            "The cat sat on the mat.",
+            "I like to eat pizza.",
+            "Machine learning is fun."
+        ]
+    
+        refs = [
+            ["The cat sat on the mat."],  # Exact match
+            ["I enjoy eating pizza."],     # Similar but not exact
+            ["Natural language processing is interesting."]  # Different
+        ]
+    
+        latencies = [100.0, 150.0, 200.0]  # ms
+    
+>       metrics = compute_text_generation_metrics(preds, refs, latencies_ms=latencies)
+
+tests/unit/test_metrics.py:268: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/eval/metrics.py:241: in compute_text_generation_metrics
+    pred_tokens = nltk.word_tokenize(pred.lower())
+/opt/anaconda3/lib/python3.13/site-packages/nltk/tokenize/__init__.py:142: in word_tokenize
+    sentences = [text] if preserve_line else sent_tokenize(text, language)
+/opt/anaconda3/lib/python3.13/site-packages/nltk/tokenize/__init__.py:119: in sent_tokenize
+    tokenizer = _get_punkt_tokenizer(language)
+/opt/anaconda3/lib/python3.13/site-packages/nltk/tokenize/__init__.py:105: in _get_punkt_tokenizer
+    return PunktTokenizer(language)
+/opt/anaconda3/lib/python3.13/site-packages/nltk/tokenize/punkt.py:1744: in __init__
+    self.load_lang(lang)
+/opt/anaconda3/lib/python3.13/site-packages/nltk/tokenize/punkt.py:1749: in load_lang
+    lang_dir = find(f"tokenizers/punkt_tab/{lang}/")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+resource_name = 'tokenizers/punkt_tab/english/'
+paths = ['/Users/iancruickshank/nltk_data', '/opt/anaconda3/nltk_data', '/opt/anaconda3/share/nltk_data', '/opt/anaconda3/lib/nltk_data', '/usr/share/nltk_data', '/usr/local/share/nltk_data', ...]
+
+    def find(resource_name, paths=None):
+        """
+        Find the given resource by searching through the directories and
+        zip files in paths, where a None or empty string specifies an absolute path.
+        Returns a corresponding path name.  If the given resource is not
+        found, raise a ``LookupError``, whose message gives a pointer to
+        the installation instructions for the NLTK downloader.
+    
+        Zip File Handling:
+    
+          - If ``resource_name`` contains a component with a ``.zip``
+            extension, then it is assumed to be a zipfile; and the
+            remaining path components are used to look inside the zipfile.
+    
+          - If any element of ``nltk.data.path`` has a ``.zip`` extension,
+            then it is assumed to be a zipfile.
+    
+          - If a given resource name that does not contain any zipfile
+            component is not found initially, then ``find()`` will make a
+            second attempt to find that resource, by replacing each
+            component *p* in the path with *p.zip/p*.  For example, this
+            allows ``find()`` to map the resource name
+            ``corpora/chat80/cities.pl`` to a zip file path pointer to
+            ``corpora/chat80.zip/chat80/cities.pl``.
+    
+          - When using ``find()`` to locate a directory contained in a
+            zipfile, the resource name must end with the forward slash
+            character.  Otherwise, ``find()`` will not locate the
+            directory.
+    
+        :type resource_name: str or unicode
+        :param resource_name: The name of the resource to search for.
+            Resource names are posix-style relative path names, such as
+            ``corpora/brown``.  Directory names will be
+            automatically converted to a platform-appropriate path separator.
+        :rtype: str
+        """
+        resource_name = normalize_resource_name(resource_name, True)
+    
+        # Resolve default paths at runtime in-case the user overrides
+        # nltk.data.path
+        if paths is None:
+            paths = path
+    
+        # Check if the resource name includes a zipfile name
+        m = re.match(r"(.*\.zip)/?(.*)$|", resource_name)
+        zipfile, zipentry = m.groups()
+    
+        # Check each item in our path
+        for path_ in paths:
+            # Is the path item a zipfile?
+            if path_ and (os.path.isfile(path_) and path_.endswith(".zip")):
+                try:
+                    return ZipFilePathPointer(path_, resource_name)
+                except OSError:
+                    # resource not in zipfile
+                    continue
+    
+            # Is the path item a directory or is resource_name an absolute path?
+            elif not path_ or os.path.isdir(path_):
+                if zipfile is None:
+                    p = os.path.join(path_, url2pathname(resource_name))
+                    if os.path.exists(p):
+                        if p.endswith(".gz"):
+                            return GzipFileSystemPathPointer(p)
+                        else:
+                            return FileSystemPathPointer(p)
+                else:
+                    p = os.path.join(path_, url2pathname(zipfile))
+                    if os.path.exists(p):
+                        try:
+                            return ZipFilePathPointer(p, zipentry)
+                        except OSError:
+                            # resource not in zipfile
+                            continue
+    
+        # Fallback: if the path doesn't include a zip file, then try
+        # again, assuming that one of the path components is inside a
+        # zipfile of the same name.
+        if zipfile is None:
+            pieces = resource_name.split("/")
+            for i in range(len(pieces)):
+                modified_name = "/".join(pieces[:i] + [pieces[i] + ".zip"] + pieces[i:])
+                try:
+                    return find(modified_name, paths)
+                except LookupError:
+                    pass
+    
+        # Identify the package (i.e. the .zip file) to download.
+        resource_zipname = resource_name.split("/")[1]
+        if resource_zipname.endswith(".zip"):
+            resource_zipname = resource_zipname.rpartition(".")[0]
+        # Display a friendly error message if the resource wasn't found:
+        msg = str(
+            "Resource \33[93m{resource}\033[0m not found.\n"
+            "Please use the NLTK Downloader to obtain the resource:\n\n"
+            "\33[31m"  # To display red text in terminal.
+            ">>> import nltk\n"
+            ">>> nltk.download('{resource}')\n"
+            "\033[0m"
+        ).format(resource=resource_zipname)
+        msg = textwrap_indent(msg)
+    
+        msg += "\n  For more information see: https://www.nltk.org/data.html\n"
+    
+        msg += "\n  Attempted to load \33[93m{resource_name}\033[0m\n".format(
+            resource_name=resource_name
+        )
+    
+        msg += "\n  Searched in:" + "".join("\n    - %r" % d for d in paths)
+        sep = "*" * 70
+        resource_not_found = f"\n{sep}\n{msg}\n{sep}\n"
+>       raise LookupError(resource_not_found)
+E       LookupError: 
+E       **********************************************************************
+E         Resource [93mpunkt_tab[0m not found.
+E         Please use the NLTK Downloader to obtain the resource:
+E       
+E         [31m>>> import nltk
+E         >>> nltk.download('punkt_tab')
+E         [0m
+E         For more information see: https://www.nltk.org/data.html
+E       
+E         Attempted to load [93mtokenizers/punkt_tab/english/[0m
+E       
+E         Searched in:
+E           - '/Users/iancruickshank/nltk_data'
+E           - '/opt/anaconda3/nltk_data'
+E           - '/opt/anaconda3/share/nltk_data'
+E           - '/opt/anaconda3/lib/nltk_data'
+E           - '/usr/share/nltk_data'
+E           - '/usr/local/share/nltk_data'
+E           - '/usr/lib/nltk_data'
+E           - '/usr/local/lib/nltk_data'
+E       **********************************************************************
+
+/opt/anaconda3/lib/python3.13/site-packages/nltk/data.py:579: LookupError
+______________ TestTextGenerationMetrics.test_multiple_references ______________
+
+self = <test_metrics.TestTextGenerationMetrics object at 0x145906710>
+
+    def test_multiple_references(self) -> None:
+        """Test metrics with multiple references per prediction."""
+        preds = [
+            "The cat sat on the mat.",
+            "The weather is nice today."
+        ]
+    
+        refs = [
+            ["A cat is on the mat.", "The cat sat on the mat.", "There is a cat on the mat."],  # Multiple refs
+            ["It's a beautiful day.", "The weather is wonderful."]  # Multiple refs, no exact match
+        ]
+    
+>       metrics = compute_text_generation_metrics(preds, refs)
+
+tests/unit/test_metrics.py:298: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/eval/metrics.py:241: in compute_text_generation_metrics
+    pred_tokens = nltk.word_tokenize(pred.lower())
+/opt/anaconda3/lib/python3.13/site-packages/nltk/tokenize/__init__.py:142: in word_tokenize
+    sentences = [text] if preserve_line else sent_tokenize(text, language)
+/opt/anaconda3/lib/python3.13/site-packages/nltk/tokenize/__init__.py:119: in sent_tokenize
+    tokenizer = _get_punkt_tokenizer(language)
+/opt/anaconda3/lib/python3.13/site-packages/nltk/tokenize/__init__.py:105: in _get_punkt_tokenizer
+    return PunktTokenizer(language)
+/opt/anaconda3/lib/python3.13/site-packages/nltk/tokenize/punkt.py:1744: in __init__
+    self.load_lang(lang)
+/opt/anaconda3/lib/python3.13/site-packages/nltk/tokenize/punkt.py:1749: in load_lang
+    lang_dir = find(f"tokenizers/punkt_tab/{lang}/")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+resource_name = 'tokenizers/punkt_tab/english/'
+paths = ['/Users/iancruickshank/nltk_data', '/opt/anaconda3/nltk_data', '/opt/anaconda3/share/nltk_data', '/opt/anaconda3/lib/nltk_data', '/usr/share/nltk_data', '/usr/local/share/nltk_data', ...]
+
+    def find(resource_name, paths=None):
+        """
+        Find the given resource by searching through the directories and
+        zip files in paths, where a None or empty string specifies an absolute path.
+        Returns a corresponding path name.  If the given resource is not
+        found, raise a ``LookupError``, whose message gives a pointer to
+        the installation instructions for the NLTK downloader.
+    
+        Zip File Handling:
+    
+          - If ``resource_name`` contains a component with a ``.zip``
+            extension, then it is assumed to be a zipfile; and the
+            remaining path components are used to look inside the zipfile.
+    
+          - If any element of ``nltk.data.path`` has a ``.zip`` extension,
+            then it is assumed to be a zipfile.
+    
+          - If a given resource name that does not contain any zipfile
+            component is not found initially, then ``find()`` will make a
+            second attempt to find that resource, by replacing each
+            component *p* in the path with *p.zip/p*.  For example, this
+            allows ``find()`` to map the resource name
+            ``corpora/chat80/cities.pl`` to a zip file path pointer to
+            ``corpora/chat80.zip/chat80/cities.pl``.
+    
+          - When using ``find()`` to locate a directory contained in a
+            zipfile, the resource name must end with the forward slash
+            character.  Otherwise, ``find()`` will not locate the
+            directory.
+    
+        :type resource_name: str or unicode
+        :param resource_name: The name of the resource to search for.
+            Resource names are posix-style relative path names, such as
+            ``corpora/brown``.  Directory names will be
+            automatically converted to a platform-appropriate path separator.
+        :rtype: str
+        """
+        resource_name = normalize_resource_name(resource_name, True)
+    
+        # Resolve default paths at runtime in-case the user overrides
+        # nltk.data.path
+        if paths is None:
+            paths = path
+    
+        # Check if the resource name includes a zipfile name
+        m = re.match(r"(.*\.zip)/?(.*)$|", resource_name)
+        zipfile, zipentry = m.groups()
+    
+        # Check each item in our path
+        for path_ in paths:
+            # Is the path item a zipfile?
+            if path_ and (os.path.isfile(path_) and path_.endswith(".zip")):
+                try:
+                    return ZipFilePathPointer(path_, resource_name)
+                except OSError:
+                    # resource not in zipfile
+                    continue
+    
+            # Is the path item a directory or is resource_name an absolute path?
+            elif not path_ or os.path.isdir(path_):
+                if zipfile is None:
+                    p = os.path.join(path_, url2pathname(resource_name))
+                    if os.path.exists(p):
+                        if p.endswith(".gz"):
+                            return GzipFileSystemPathPointer(p)
+                        else:
+                            return FileSystemPathPointer(p)
+                else:
+                    p = os.path.join(path_, url2pathname(zipfile))
+                    if os.path.exists(p):
+                        try:
+                            return ZipFilePathPointer(p, zipentry)
+                        except OSError:
+                            # resource not in zipfile
+                            continue
+    
+        # Fallback: if the path doesn't include a zip file, then try
+        # again, assuming that one of the path components is inside a
+        # zipfile of the same name.
+        if zipfile is None:
+            pieces = resource_name.split("/")
+            for i in range(len(pieces)):
+                modified_name = "/".join(pieces[:i] + [pieces[i] + ".zip"] + pieces[i:])
+                try:
+                    return find(modified_name, paths)
+                except LookupError:
+                    pass
+    
+        # Identify the package (i.e. the .zip file) to download.
+        resource_zipname = resource_name.split("/")[1]
+        if resource_zipname.endswith(".zip"):
+            resource_zipname = resource_zipname.rpartition(".")[0]
+        # Display a friendly error message if the resource wasn't found:
+        msg = str(
+            "Resource \33[93m{resource}\033[0m not found.\n"
+            "Please use the NLTK Downloader to obtain the resource:\n\n"
+            "\33[31m"  # To display red text in terminal.
+            ">>> import nltk\n"
+            ">>> nltk.download('{resource}')\n"
+            "\033[0m"
+        ).format(resource=resource_zipname)
+        msg = textwrap_indent(msg)
+    
+        msg += "\n  For more information see: https://www.nltk.org/data.html\n"
+    
+        msg += "\n  Attempted to load \33[93m{resource_name}\033[0m\n".format(
+            resource_name=resource_name
+        )
+    
+        msg += "\n  Searched in:" + "".join("\n    - %r" % d for d in paths)
+        sep = "*" * 70
+        resource_not_found = f"\n{sep}\n{msg}\n{sep}\n"
+>       raise LookupError(resource_not_found)
+E       LookupError: 
+E       **********************************************************************
+E         Resource [93mpunkt_tab[0m not found.
+E         Please use the NLTK Downloader to obtain the resource:
+E       
+E         [31m>>> import nltk
+E         >>> nltk.download('punkt_tab')
+E         [0m
+E         For more information see: https://www.nltk.org/data.html
+E       
+E         Attempted to load [93mtokenizers/punkt_tab/english/[0m
+E       
+E         Searched in:
+E           - '/Users/iancruickshank/nltk_data'
+E           - '/opt/anaconda3/nltk_data'
+E           - '/opt/anaconda3/share/nltk_data'
+E           - '/opt/anaconda3/lib/nltk_data'
+E           - '/usr/share/nltk_data'
+E           - '/usr/local/share/nltk_data'
+E           - '/usr/lib/nltk_data'
+E           - '/usr/local/lib/nltk_data'
+E       **********************************************************************
+
+/opt/anaconda3/lib/python3.13/site-packages/nltk/data.py:579: LookupError
+____________ TestEvaluationHelpers.test_flatten_probabilities_torch ____________
+
+self = <test_evaluation_helpers.TestEvaluationHelpers object at 0x145ae6dd0>
+
+    @pytest.mark.skipif(not HAS_TORCH, reason="PyTorch not available")
+    def test_flatten_probabilities_torch(self) -> None:
+        """Test flattening probability tensors."""
+        # Tensor with exact match length
+        tensor = torch.tensor([0.1, 0.2, 0.3])
+>       assert _flatten_probabilities(tensor, 3) == [0.1, 0.2, 0.3]
+E       AssertionError: assert [0.1000000014...0001192092896] == [0.1, 0.2, 0.3]
+E         
+E         At index 0 diff: 0.10000000149011612 != 0.1
+E         
+E         Full diff:
+E           [
+E         -     0.1,
+E         -     0.2,...
+E         
+E         ...Full output truncated (5 lines hidden), use '-vv' to show
+
+tests/unit/test_evaluation_helpers.py:147: AssertionError
+______________ TestEvaluationHelpers.test_evaluate_classification ______________
+
+self = <test_evaluation_helpers.TestEvaluationHelpers object at 0x143f4b290>
+tmp_path = PosixPath('/private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-119/test_evaluate_classification0')
+
+    def test_evaluate_classification(self, tmp_path: Path) -> None:
+        """Test evaluate function with classification task."""
+        # Simple model that always predicts class 1
+        model = lambda x: 1
+    
+        # Simple dataloader with 5 samples
+        class SimpleDataLoader:
+            def __init__(self):
+                self.data = [
+                    ([0], 1),  # Correct
+                    ([0], 0),  # Incorrect
+                    ([0], 1),  # Correct
+                    ([0], 1),  # Correct
+                    ([0], 0),  # Incorrect
+                ]
+    
+            def __iter__(self):
+                return iter(self.data)
+    
+        dataloader = SimpleDataLoader()
+        output_dir = tmp_path / "eval_results"
+    
+        # Create experiment logger
+        config = TelemetryConfig()
+        logger = ExperimentLogger(config, {"model": "test_model"})
+    
+        # Run evaluation
+        metrics = evaluate(
+            model,
+            dataloader,
+            task_type="classification",
+            experiment_logger=logger,
+            output_dir=output_dir,
+            epoch=1,
+        )
+    
+        # Check metrics
+>       logger.debug(f"Classification metrics: {metrics}")
+E       AttributeError: 'ExperimentLogger' object has no attribute 'debug'
+
+tests/unit/test_evaluation_helpers.py:216: AttributeError
+------------------------------ Captured log call -------------------------------
+INFO     src.eval.evaluate:evaluate.py:126 Saved evaluation report to /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-119/test_evaluate_classification0/eval_results/eval_report.json
+________________ TestEvaluationHelpers.test_evaluate_regression ________________
+
+self = <test_evaluation_helpers.TestEvaluationHelpers object at 0x137564520>
+tmp_path = PosixPath('/private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-119/test_evaluate_regression0')
+
+    def test_evaluate_regression(self, tmp_path: Path) -> None:
+        """Test evaluate function with regression task."""
+        # Simple model that always predicts y = 2x
+        model = lambda x: x * 2
+    
+        # Simple dataloader with regression samples
+        class RegressionDataLoader:
+            def __init__(self):
+                self.data = [
+                    ([1], 2),    # Correct
+                    ([2], 3),    # Off by 1
+                    ([3], 6),    # Correct
+                    ([4], 7),    # Off by 1
+                    ([5], 10),   # Correct
+                ]
+    
+            def __iter__(self):
+                return iter(self.data)
+    
+        dataloader = RegressionDataLoader()
+        output_dir = tmp_path / "regression_results"
+    
+        # Create experiment logger
+        config = TelemetryConfig()
+        logger = ExperimentLogger(config, {"model": "regression_model"})
+    
+        # Run evaluation
+        metrics = evaluate(
+            model,
+            dataloader,
+            task_type="regression",
+            experiment_logger=logger,
+            output_dir=output_dir,
+            epoch=1,
+        )
+    
+        # Check metrics
+>       logger.debug(f"Regression metrics: {metrics}")
+E       AttributeError: 'ExperimentLogger' object has no attribute 'debug'
+
+tests/unit/test_evaluation_helpers.py:271: AttributeError
+------------------------------ Captured log call -------------------------------
+WARNING  src.eval.evaluate:evaluate.py:114 Error computing metrics: Predictions and targets must share the same length: 10 vs 5
+INFO     src.eval.evaluate:evaluate.py:126 Saved evaluation report to /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-119/test_evaluate_regression0/regression_results/eval_report.json
+___________________ TestEvaluationHelpers.test_evaluate_text ___________________
+
+self = <test_evaluation_helpers.TestEvaluationHelpers object at 0x144877ee0>
+tmp_path = PosixPath('/private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-119/test_evaluate_text0')
+
+    def test_evaluate_text(self, tmp_path: Path) -> None:
+        """Test evaluate function with text generation task."""
+        # Model that returns fixed responses
+        responses = ["Hello world", "This is a test", "Machine learning"]
+        iter_responses = iter(responses)
+        model = lambda x: next(iter_responses)
+    
+        # Simple dataloader with text samples
+        class TextDataLoader:
+            def __init__(self):
+                self.data = [
+                    (["prompt1"], ["Hello world"]),          # Correct
+                    (["prompt2"], ["Something different"]),  # Incorrect
+                    (["prompt3"], ["Machine learning"]),     # Correct
+                ]
+    
+            def __iter__(self):
+                return iter(self.data)
+    
+        dataloader = TextDataLoader()
+        output_dir = tmp_path / "text_results"
+    
+        # Create experiment logger
+        config = TelemetryConfig()
+        logger = ExperimentLogger(config, {"model": "text_model"})
+    
+        # Run evaluation
+>       metrics = evaluate(
+            model,
+            dataloader,
+            task_type="text",
+            experiment_logger=logger,
+            output_dir=output_dir,
+            epoch=1,
+        )
+
+tests/unit/test_evaluation_helpers.py:307: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/eval/evaluate.py:100: in evaluate
+    metrics = compute_text_generation_metrics(
+src/eval/metrics.py:241: in compute_text_generation_metrics
+    pred_tokens = nltk.word_tokenize(pred.lower())
+/opt/anaconda3/lib/python3.13/site-packages/nltk/tokenize/__init__.py:142: in word_tokenize
+    sentences = [text] if preserve_line else sent_tokenize(text, language)
+/opt/anaconda3/lib/python3.13/site-packages/nltk/tokenize/__init__.py:119: in sent_tokenize
+    tokenizer = _get_punkt_tokenizer(language)
+/opt/anaconda3/lib/python3.13/site-packages/nltk/tokenize/__init__.py:105: in _get_punkt_tokenizer
+    return PunktTokenizer(language)
+/opt/anaconda3/lib/python3.13/site-packages/nltk/tokenize/punkt.py:1744: in __init__
+    self.load_lang(lang)
+/opt/anaconda3/lib/python3.13/site-packages/nltk/tokenize/punkt.py:1749: in load_lang
+    lang_dir = find(f"tokenizers/punkt_tab/{lang}/")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+resource_name = 'tokenizers/punkt_tab/english/'
+paths = ['/Users/iancruickshank/nltk_data', '/opt/anaconda3/nltk_data', '/opt/anaconda3/share/nltk_data', '/opt/anaconda3/lib/nltk_data', '/usr/share/nltk_data', '/usr/local/share/nltk_data', ...]
+
+    def find(resource_name, paths=None):
+        """
+        Find the given resource by searching through the directories and
+        zip files in paths, where a None or empty string specifies an absolute path.
+        Returns a corresponding path name.  If the given resource is not
+        found, raise a ``LookupError``, whose message gives a pointer to
+        the installation instructions for the NLTK downloader.
+    
+        Zip File Handling:
+    
+          - If ``resource_name`` contains a component with a ``.zip``
+            extension, then it is assumed to be a zipfile; and the
+            remaining path components are used to look inside the zipfile.
+    
+          - If any element of ``nltk.data.path`` has a ``.zip`` extension,
+            then it is assumed to be a zipfile.
+    
+          - If a given resource name that does not contain any zipfile
+            component is not found initially, then ``find()`` will make a
+            second attempt to find that resource, by replacing each
+            component *p* in the path with *p.zip/p*.  For example, this
+            allows ``find()`` to map the resource name
+            ``corpora/chat80/cities.pl`` to a zip file path pointer to
+            ``corpora/chat80.zip/chat80/cities.pl``.
+    
+          - When using ``find()`` to locate a directory contained in a
+            zipfile, the resource name must end with the forward slash
+            character.  Otherwise, ``find()`` will not locate the
+            directory.
+    
+        :type resource_name: str or unicode
+        :param resource_name: The name of the resource to search for.
+            Resource names are posix-style relative path names, such as
+            ``corpora/brown``.  Directory names will be
+            automatically converted to a platform-appropriate path separator.
+        :rtype: str
+        """
+        resource_name = normalize_resource_name(resource_name, True)
+    
+        # Resolve default paths at runtime in-case the user overrides
+        # nltk.data.path
+        if paths is None:
+            paths = path
+    
+        # Check if the resource name includes a zipfile name
+        m = re.match(r"(.*\.zip)/?(.*)$|", resource_name)
+        zipfile, zipentry = m.groups()
+    
+        # Check each item in our path
+        for path_ in paths:
+            # Is the path item a zipfile?
+            if path_ and (os.path.isfile(path_) and path_.endswith(".zip")):
+                try:
+                    return ZipFilePathPointer(path_, resource_name)
+                except OSError:
+                    # resource not in zipfile
+                    continue
+    
+            # Is the path item a directory or is resource_name an absolute path?
+            elif not path_ or os.path.isdir(path_):
+                if zipfile is None:
+                    p = os.path.join(path_, url2pathname(resource_name))
+                    if os.path.exists(p):
+                        if p.endswith(".gz"):
+                            return GzipFileSystemPathPointer(p)
+                        else:
+                            return FileSystemPathPointer(p)
+                else:
+                    p = os.path.join(path_, url2pathname(zipfile))
+                    if os.path.exists(p):
+                        try:
+                            return ZipFilePathPointer(p, zipentry)
+                        except OSError:
+                            # resource not in zipfile
+                            continue
+    
+        # Fallback: if the path doesn't include a zip file, then try
+        # again, assuming that one of the path components is inside a
+        # zipfile of the same name.
+        if zipfile is None:
+            pieces = resource_name.split("/")
+            for i in range(len(pieces)):
+                modified_name = "/".join(pieces[:i] + [pieces[i] + ".zip"] + pieces[i:])
+                try:
+                    return find(modified_name, paths)
+                except LookupError:
+                    pass
+    
+        # Identify the package (i.e. the .zip file) to download.
+        resource_zipname = resource_name.split("/")[1]
+        if resource_zipname.endswith(".zip"):
+            resource_zipname = resource_zipname.rpartition(".")[0]
+        # Display a friendly error message if the resource wasn't found:
+        msg = str(
+            "Resource \33[93m{resource}\033[0m not found.\n"
+            "Please use the NLTK Downloader to obtain the resource:\n\n"
+            "\33[31m"  # To display red text in terminal.
+            ">>> import nltk\n"
+            ">>> nltk.download('{resource}')\n"
+            "\033[0m"
+        ).format(resource=resource_zipname)
+        msg = textwrap_indent(msg)
+    
+        msg += "\n  For more information see: https://www.nltk.org/data.html\n"
+    
+        msg += "\n  Attempted to load \33[93m{resource_name}\033[0m\n".format(
+            resource_name=resource_name
+        )
+    
+        msg += "\n  Searched in:" + "".join("\n    - %r" % d for d in paths)
+        sep = "*" * 70
+        resource_not_found = f"\n{sep}\n{msg}\n{sep}\n"
+>       raise LookupError(resource_not_found)
+E       LookupError: 
+E       **********************************************************************
+E         Resource [93mpunkt_tab[0m not found.
+E         Please use the NLTK Downloader to obtain the resource:
+E       
+E         [31m>>> import nltk
+E         >>> nltk.download('punkt_tab')
+E         [0m
+E         For more information see: https://www.nltk.org/data.html
+E       
+E         Attempted to load [93mtokenizers/punkt_tab/english/[0m
+E       
+E         Searched in:
+E           - '/Users/iancruickshank/nltk_data'
+E           - '/opt/anaconda3/nltk_data'
+E           - '/opt/anaconda3/share/nltk_data'
+E           - '/opt/anaconda3/lib/nltk_data'
+E           - '/usr/share/nltk_data'
+E           - '/usr/local/share/nltk_data'
+E           - '/usr/lib/nltk_data'
+E           - '/usr/local/lib/nltk_data'
+E       **********************************************************************
+
+/opt/anaconda3/lib/python3.13/site-packages/nltk/data.py:579: LookupError
+____________ TestEvaluationHelpers.test_evaluate_error_invalid_task ____________
+
+self = <test_evaluation_helpers.TestEvaluationHelpers object at 0x1245d2490>
+
+    def test_evaluate_error_invalid_task(self) -> None:
+        """Test evaluate function with invalid task type."""
+        model = lambda x: x
+        dataloader = [(1, 1)]  # Simple dataloader with one sample
+    
+>       with pytest.raises(ValueError, match="Unsupported task type"):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/unit/test_evaluation_helpers.py:331: Failed
+------------------------------ Captured log call -------------------------------
+WARNING  src.eval.evaluate:evaluate.py:114 Error computing metrics: Unsupported task type: invalid_task
+INFO     src.eval.evaluate:evaluate.py:126 Saved evaluation report to artifacts/eval/eval_report.json
+=============================== warnings summary ===============================
+src/config/telemetry.py:65
+  /Users/iancruickshank/GraniteMOE1B_SQE_Agent/src/config/telemetry.py:65: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.8/migration/
+    @validator("tb_log_dir")
+
+src/config/telemetry.py:71
+  /Users/iancruickshank/GraniteMOE1B_SQE_Agent/src/config/telemetry.py:71: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.8/migration/
+    @validator("wandb_tags", pre=True)
+
+tests/unit/test_telemetry_config.py: 12 warnings
+  /opt/anaconda3/lib/python3.13/site-packages/pydantic/main.py:1087: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.8/migration/
+    warnings.warn('The `dict` method is deprecated; use `model_dump` instead.', category=PydanticDeprecatedSince20)
+
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_file_system_artifacts
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_metrics_with_different_types
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_git_sha_detection
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_git_sha_detection
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_artifact_with_nonexistent_path
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_no_metrics
+  /Users/iancruickshank/GraniteMOE1B_SQE_Agent/src/telemetry/experiment.py:230: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[123-expected7]
+FAILED tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_invalid_log_interval_steps
+FAILED tests/unit/test_experiment_logger.py::TestExperimentLogger::test_file_system_artifacts
+FAILED tests/unit/test_experiment_logger.py::TestExperimentLogger::test_run_name_generation
+FAILED tests/unit/test_experiment_logger.py::TestExperimentLogger::test_experiment_logger_with_real_directory_structure
+FAILED tests/unit/test_metrics.py::TestClassificationMetrics::test_multiclass_classification
+FAILED tests/unit/test_metrics.py::TestClassificationMetrics::test_probabilities_without_sklearn
+FAILED tests/unit/test_metrics.py::TestTextGenerationMetrics::test_basic_text_metrics
+FAILED tests/unit/test_metrics.py::TestTextGenerationMetrics::test_multiple_references
+FAILED tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_flatten_probabilities_torch
+FAILED tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_evaluate_classification
+FAILED tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_evaluate_regression
+FAILED tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_evaluate_text
+FAILED tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_evaluate_error_invalid_task
+================== 14 failed, 71 passed, 20 warnings in 2.91s ==================

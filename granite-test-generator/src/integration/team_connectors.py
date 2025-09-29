@@ -6,6 +6,10 @@ import logging
 import re
 import os
 from pathlib import Path
+from src.utils.constants import (
+    DEFAULT_HTTP_TIMEOUT, DEFAULT_FILE_EXTENSIONS, DEFAULT_OUTPUT_DIR,
+    GITHUB_API_BASE_URL, GITHUB_API_VERSION, PRIORITY_MAPPINGS
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +46,7 @@ class JiraConnector(TeamConnector):
         logger.info(f"Fetching requirements from Jira: {search_url} with JQL: {jql}")
         
         try:
-            response = requests.get(search_url, params=params, auth=self.auth, timeout=30)
+            response = requests.get(search_url, params=params, auth=self.auth, timeout=DEFAULT_HTTP_TIMEOUT)
             response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
             issues = response.json()['issues']
             requirements = []
@@ -95,7 +99,7 @@ class JiraConnector(TeamConnector):
                 }
             }
             try:
-                response = requests.post(issue_create_url, json=issue_data, auth=self.auth, timeout=30)
+                response = requests.post(issue_create_url, json=issue_data, auth=self.auth, timeout=DEFAULT_HTTP_TIMEOUT)
                 response.raise_for_status()
                 success_count += 1
                 logger.debug(f"Successfully created Jira issue for test case: {test_case.summary}")
@@ -143,10 +147,10 @@ class GitHubConnector(TeamConnector):
         self.repo_name = repo_name
         self.headers = {
             'Authorization': f'token {token}',
-            'Accept': 'application/vnd.github.v3+json'
+            'Accept': GITHUB_API_VERSION
         }
         # Use GitHub REST API base for the target repository
-        self.base_url = f"https://api.github.com/repos/{self.repo_owner}/{self.repo_name}"
+        self.base_url = f"{GITHUB_API_BASE_URL}/repos/{self.repo_owner}/{self.repo_name}"
         logger.debug(f"GitHubConnector initialized for repo: {repo_owner}/{repo_name}")
 
     def _safe_headers(self) -> Dict[str, str]:
@@ -166,7 +170,7 @@ class GitHubConnector(TeamConnector):
         logger.info(f"Fetching requirements from GitHub Issues: {issues_url}")
 
         try:
-            response = requests.get(issues_url, headers=self.headers, params=params, timeout=30)
+            response = requests.get(issues_url, headers=self.headers, params=params, timeout=DEFAULT_HTTP_TIMEOUT)
             response.raise_for_status()
             issues = response.json()
             requirements = []
@@ -221,7 +225,7 @@ class GitHubConnector(TeamConnector):
                 "labels": ["test-case", test_case.test_type.value, test_case.priority.value]
             }
             try:
-                response = requests.post(issues_create_url, json=issue_data, headers=self.headers, timeout=30)
+                response = requests.post(issues_create_url, json=issue_data, headers=self.headers, timeout=DEFAULT_HTTP_TIMEOUT)
                 response.raise_for_status()
                 success_count += 1
                 logger.debug(f"Successfully created GitHub issue for test case: {test_case.summary}")
@@ -303,8 +307,8 @@ class LocalFileSystemConnector(TeamConnector):
             raise ValueError("input_directory or directory must be provided")
         self.input_directory = Path(base_dir)
         self.team_name = team_name
-        self.output_directory = Path(output_directory) if output_directory else Path(f"output/{team_name}")
-        self.file_types = file_types or [".md", ".txt", ".json"]
+        self.output_directory = Path(output_directory) if output_directory else Path(f"{DEFAULT_OUTPUT_DIR}/{team_name}")
+        self.file_types = file_types or DEFAULT_FILE_EXTENSIONS
         logger.info(f"LocalFileSystemConnector initialized for team {team_name} at {input_directory}")
 
     def _normalize_description(self, description: Any) -> str:
@@ -379,12 +383,7 @@ class LocalFileSystemConnector(TeamConnector):
         tag_match = re.search(r'\[(P[123])\]|\((P[123])\)', content)
         if tag_match:
             tag = tag_match.group(1) or tag_match.group(2)
-            if tag == 'P1':
-                return 'high'
-            elif tag == 'P2':
-                return 'medium'
-            elif tag == 'P3':
-                return 'low'
+            return PRIORITY_MAPPINGS.get(tag, 'medium')
         
         # Check for priority keywords
         if re.search(r'\b(critical|urgent|high\s+priority)\b', content, re.IGNORECASE):
@@ -409,9 +408,24 @@ class LocalFileSystemConnector(TeamConnector):
         Raises:
             FileNotFoundError: If the input directory does not exist
         """
+        logger.info(f"Starting file discovery in directory: {self.input_directory}")
+        logger.debug(f"Searching for file types: {self.file_types}")
+        logger.debug(f"Directory exists: {self.input_directory.exists()}")
+        
         if not self.input_directory.exists():
             logger.warning(f"Input directory does not exist: {self.input_directory}")
             return []
+        
+        # Log directory contents for debugging
+        try:
+            all_files = list(self.input_directory.rglob("*"))
+            logger.debug(f"Total files/directories found recursively: {len(all_files)}")
+            for item in all_files[:10]:  # Log first 10 items to avoid spam
+                logger.debug(f"  Found: {item} (is_file: {item.is_file()})")
+            if len(all_files) > 10:
+                logger.debug(f"  ... and {len(all_files) - 10} more items")
+        except Exception as e:
+            logger.warning(f"Could not list directory contents: {e}")
             
         requirements = []
         file_count = 0
@@ -419,8 +433,14 @@ class LocalFileSystemConnector(TeamConnector):
         
         # Process individual files with specified extensions
         for file_type in self.file_types:
-            for file_path in self.input_directory.glob(f"**/*{file_type}"):
+            logger.debug(f"Searching for files with extension: {file_type}")
+            glob_pattern = f"**/*{file_type}"
+            matching_files = list(self.input_directory.glob(glob_pattern))
+            logger.debug(f"Found {len(matching_files)} files matching pattern '{glob_pattern}'")
+            
+            for file_path in matching_files:
                 file_count += 1
+                logger.debug(f"Processing file: {file_path}")
                 try:
                     # Skip directories and hidden files
                     if file_path.is_dir() or file_path.name.startswith('.'):
