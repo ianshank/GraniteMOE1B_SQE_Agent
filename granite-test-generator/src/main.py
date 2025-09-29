@@ -324,6 +324,48 @@ class GraniteTestCaseGenerator:
             local_only=self.local_only_mode,
         )
         
+        # Optional: Initialize code indexer (no-op unless enabled in config)
+        try:
+            ci_cfg = (self.config.get('rag', {}) or {}).get('code_indexing', {}) or {}
+            if bool(str(ci_cfg.get('enabled', 'false')).lower() in {'1','true','yes','on'}):
+                logger.debug("Initializing CodebaseIndexer as code_indexing.enabled is true")
+                from src.rag.code_indexer import CodebaseIndexer
+
+                def _add_documents(payload):
+                    # Add to Chroma collection if available
+                    collection = getattr(self.components['rag_retriever'], 'collection', None)
+                    if collection is not None:
+                        collection.add(
+                            documents=[doc for doc, _ in payload],
+                            metadatas=[meta for _, meta in payload],
+                            ids=[f"code::{m.get('file_path','unknown')}::{m.get('chunk_index',0)}" for _, m in payload],
+                        )
+
+                    # Add to FAISS vectorstore if embeddings exist
+                    embeddings = getattr(self.components['rag_retriever'], 'embeddings', None)
+                    if embeddings is not None:
+                        try:
+                            from langchain_community.vectorstores import FAISS  # type: ignore
+                            vs = getattr(self.components['rag_retriever'], 'vectorstore', None)
+                            texts = [doc for doc, _ in payload]
+                            metas = [meta for _, meta in payload]
+                            if vs is None:
+                                self.components['rag_retriever'].vectorstore = FAISS.from_texts(texts, embeddings, metadatas=metas)
+                            else:
+                                vs.add_texts(texts=texts, metadatas=metas)
+                        except Exception as e:
+                            logger.debug("Skipping FAISS add_texts due to error: %s", e)
+
+                self.components['code_indexer'] = CodebaseIndexer(
+                    add_documents=_add_documents,
+                    chunk_size=int(ci_cfg.get('chunk_size', 1000)),
+                    chunk_overlap=int(ci_cfg.get('chunk_overlap', 200)),
+                    separators=ci_cfg.get('separators'),
+                )
+                logger.info("CodebaseIndexer initialized")
+        except Exception as e:
+            logger.debug("CodebaseIndexer initialization skipped due to error: %s", e)
+        
         print("System initialization complete!")
     
     async def setup_data_pipeline(self):
@@ -419,6 +461,18 @@ class GraniteTestCaseGenerator:
         
         logger.info("Data pipeline setup complete!")
         print("Data pipeline setup complete!")
+
+        # Optional: Run code indexing after data pipeline to avoid startup cost
+        try:
+            ci_cfg = (self.config.get('rag', {}) or {}).get('code_indexing', {}) or {}
+            if 'code_indexer' in self.components and bool(str(ci_cfg.get('enabled', 'false')).lower() in {'1','true','yes','on'}):
+                roots = ci_cfg.get('roots') or []
+                exclude_globs = ci_cfg.get('exclude_globs') or []
+                logger.debug("Starting code indexing: roots=%s exclude=%s", roots, exclude_globs)
+                stats = self.components['code_indexer'].index_paths(roots, exclude_globs)
+                logger.info("Code indexing stats: files=%d snippets=%d errors=%d", stats.get('files',0), stats.get('snippets',0), stats.get('errors',0))
+        except Exception as e:
+            logger.debug("Code indexing skipped due to error: %s", e)
     
     async def fine_tune_model(self):
         """Fine-tune Granite MoE model if training data is available"""

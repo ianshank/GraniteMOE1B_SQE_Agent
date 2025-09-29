@@ -23,6 +23,17 @@ rag:
   chunk_size: 512
   chunk_overlap: 50
   top_k: 5
+  code_indexing:
+    enabled: ${CODE_RAG_ENABLED:false}
+    roots: [${CODE_RAG_ROOT_1:./}]
+    exclude_globs: ["**/node_modules/**","**/venv/**","**/.git/**"]
+    chunk_size: ${CODE_RAG_CHUNK_SIZE:1000}
+    chunk_overlap: ${CODE_RAG_CHUNK_OVERLAP:200}
+    max_results: ${CODE_RAG_MAX_RESULTS:10}
+    rank_weights:
+      similarity: ${CODE_RAG_W_SIM:0.4}
+      quality: ${CODE_RAG_W_QUAL:0.3}
+      reusability: ${CODE_RAG_W_REUSE:0.3}
 
 cag:
   cache_size: 10000
