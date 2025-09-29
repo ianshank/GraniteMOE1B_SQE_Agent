@@ -26,9 +26,13 @@ try:
 except Exception:  # pragma: no cover - yaml should be available
     yaml = None  # type: ignore
 
-from granite_test_generator.src.config import load_telemetry_from_sources
-from granite_test_generator.src.telemetry import ExperimentLogger
-from granite_test_generator.src.eval.evaluate import evaluate
+# Add the src directory to Python path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent / "granite-test-generator" / "src"))
+
+from config import load_telemetry_from_sources
+from telemetry import ExperimentLogger
+from eval.evaluate import evaluate
 
 LOGGER = logging.getLogger(__name__)
 DEFAULT_CONFIG_PATH = Path("config/training_config.yaml")
@@ -262,15 +266,20 @@ def run_training(argv: Optional[Iterable[str]] = None) -> TrainingArtifacts:
                 LOGGER.info("Skipping parameterized training for task %s", args.task_type)
 
             eval_dir = Path(args.output_dir) / "eval"
-            eval_metrics = evaluate(
-                model,
-                eval_loader,
-                task_type=args.task_type,
-                device=device,
-                experiment_logger=experiment,
-                output_dir=eval_dir,
-                epoch=epoch,
-            )
+            try:
+                eval_metrics = evaluate(
+                    model,
+                    eval_loader,
+                    task_type=args.task_type,
+                    device=device,
+                    experiment_logger=experiment,
+                    output_dir=eval_dir,
+                    epoch=epoch,
+                )
+            except ValueError as e:
+                LOGGER.warning(f"Evaluation error: {e}")
+                eval_metrics = {"status": "error", "message": str(e)}
+                experiment.log_metrics(epoch, eval_error=1.0)
             metric_value = eval_metrics.get(best_metric_name)
             if metric_value is not None and (best_metric is None or metric_value > best_metric):
                 best_metric = metric_value

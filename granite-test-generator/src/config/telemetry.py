@@ -35,18 +35,35 @@ def _normalize_bool(value: Optional[Any]) -> Optional[bool]:
 
 
 def _split_tags(raw_tags: Optional[Any]) -> List[str]:
-    """Return a list of telemetry tags."""
+    """
+    Return a list of telemetry tags.
+    
+    Args:
+        raw_tags: Raw tag input which can be a string, list, or other value
+        
+    Returns:
+        List of tag strings
+        
+    This function handles various input formats:
+    - Comma-separated strings: "tag1,tag2,tag3" -> ["tag1", "tag2", "tag3"]
+    - Lists of strings: ["tag1", "tag2"] -> ["tag1", "tag2"]
+    - Lists with comma-separated items: ["tag1,tag2", "tag3"] -> ["tag1", "tag2", "tag3"]
+    - Non-string/list values are converted to string: 123 -> ["123"]
+    """
     if raw_tags is None:
         return []
     if isinstance(raw_tags, str):
         return [tag.strip() for tag in raw_tags.split(",") if tag.strip()]
-    if isinstance(raw_tags, Iterable):
+    if isinstance(raw_tags, Iterable) and not isinstance(raw_tags, (str, bytes)):
         tags: List[str] = []
         for item in raw_tags:
             if not item:
                 continue
             tags.extend(_split_tags(str(item)))
         return tags
+    # Handle non-iterable values (like integers) by converting to string
+    if raw_tags:
+        return [str(raw_tags)]
     return []
 
 
@@ -73,8 +90,29 @@ class TelemetryConfig(BaseModel):
         return _split_tags(value)
 
     def merged_with(self, **overrides: Any) -> "TelemetryConfig":
-        data = self.dict()
+        """
+        Create a new config with the provided overrides applied.
+        
+        Args:
+            **overrides: Key-value pairs to override in the config
+            
+        Returns:
+            A new TelemetryConfig instance with overrides applied
+        """
+        data = self.model_dump()
         data.update({k: v for k, v in overrides.items() if v is not None})
+        
+        # Handle validation errors for specific fields
+        if "log_interval_steps" in overrides:
+            try:
+                value = int(overrides["log_interval_steps"])
+                if value < 1:
+                    # Use default value instead of invalid value
+                    data["log_interval_steps"] = 50
+            except (ValueError, TypeError):
+                # Use default value for invalid values
+                data["log_interval_steps"] = 50
+                
         return TelemetryConfig(**data)
 
 
@@ -136,6 +174,9 @@ def load_telemetry_from_sources(
     if "log_interval_steps" in overrides:
         try:
             overrides["log_interval_steps"] = int(overrides["log_interval_steps"])
+            if overrides["log_interval_steps"] < 1:
+                LOGGER.warning("Invalid log interval: %s (must be >= 1)", overrides["log_interval_steps"])
+                overrides.pop("log_interval_steps", None)
         except (TypeError, ValueError):
             LOGGER.warning("Invalid log interval override %s", overrides["log_interval_steps"])
             overrides.pop("log_interval_steps", None)

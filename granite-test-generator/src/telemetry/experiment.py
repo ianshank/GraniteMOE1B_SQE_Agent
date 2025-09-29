@@ -7,7 +7,7 @@ import logging
 import os
 import time
 from contextlib import AbstractContextManager
-from datetime import datetime
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional
 
@@ -25,6 +25,14 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
         config_snapshot: Mapping[str, Any],
         run_name: Optional[str] = None,
     ) -> None:
+        """
+        Initialize the experiment logger.
+        
+        Args:
+            telemetry_cfg: Configuration for telemetry
+            config_snapshot: Configuration snapshot to log
+            run_name: Optional explicit run name
+        """
         self._cfg = telemetry_cfg
         self._config_snapshot = dict(config_snapshot)
         self._run_name = run_name
@@ -42,6 +50,7 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
         self.finish()
 
     def start_run(self) -> None:
+        """Start the experiment run, initializing loggers."""
         if self._start_time is not None:
             return
         self._start_time = time.time()
@@ -63,6 +72,13 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
             self.log_params(**self._config_snapshot)
 
     def log_metrics(self, step: int, **metrics: float) -> None:
+        """
+        Log metrics at a specific step.
+        
+        Args:
+            step: Training step or epoch
+            **metrics: Metrics to log as key-value pairs
+        """
         if not metrics:
             return
         filtered = {k: float(v) for k, v in metrics.items() if self._is_number(v)}
@@ -87,6 +103,12 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
             self._tb_writer.flush()
 
     def log_params(self, **params: Any) -> None:
+        """
+        Log parameters for the experiment.
+        
+        Args:
+            **params: Parameters to log as key-value pairs
+        """
         if not params:
             return
         LOGGER.debug("Logging parameters: %s", params)
@@ -105,6 +127,14 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
                 LOGGER.warning("Failed to write TensorBoard params: %s", exc)
 
     def log_artifact(self, path: Any, name: Optional[str] = None, type: str = "artifact") -> None:
+        """
+        Log an artifact file.
+        
+        Args:
+            path: Path to the artifact file
+            name: Optional name for the artifact
+            type: Type of artifact (e.g., "model", "dataset")
+        """
         file_path = Path(path)
         if not file_path.exists():
             LOGGER.warning("Artifact path %s does not exist; skipping upload", file_path)
@@ -122,6 +152,12 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
                 LOGGER.warning("Failed to log artifact to W&B: %s", exc)
 
     def set_summary(self, **values: Any) -> None:
+        """
+        Update summary metrics for the experiment.
+        
+        Args:
+            **values: Summary metrics to set as key-value pairs
+        """
         if not values:
             return
         LOGGER.debug("Updating summary metrics: %s", values)
@@ -141,6 +177,7 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
                 LOGGER.warning("Failed to write TensorBoard summary: %s", exc)
 
     def finish(self) -> None:
+        """Finish the experiment run, cleaning up resources."""
         if self._closed:
             return
         self._closed = True
@@ -160,6 +197,7 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
         LOGGER.debug("Experiment logger finished")
 
     def _start_wandb_run(self) -> None:
+        """Initialize the W&B run."""
         project = self._cfg.wandb_project or os.getenv("WANDB_PROJECT")
         if not project:
             LOGGER.warning("W&B enabled but no project provided; disabling W&B logging")
@@ -209,6 +247,7 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
             self._wandb_run = None
 
     def _start_tensorboard_writer(self) -> None:
+        """Initialize the TensorBoard writer."""
         try:
             from torch.utils.tensorboard import SummaryWriter
         except Exception as exc:  # pragma: no cover
@@ -225,15 +264,31 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
             self._tb_writer = None
 
     def _derive_run_name(self) -> str:
-        model_name = self._config_snapshot.get("model", {}).get("type") or self._config_snapshot.get("model_name", "model")
-        dataset_name = self._config_snapshot.get("data", {}).get("train_file") or self._config_snapshot.get("dataset", "dataset")
-        timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+        """Derive a run name from the configuration snapshot."""
+        # Handle model name which could be a string or a dict
+        if isinstance(self._config_snapshot.get("model"), dict):
+            model_name = self._config_snapshot["model"].get("type", "model")
+        elif isinstance(self._config_snapshot.get("model"), str):
+            model_name = self._config_snapshot["model"]
+        else:
+            model_name = self._config_snapshot.get("model_name", "model")
+        
+        # Handle dataset name which could be in different formats
+        if isinstance(self._config_snapshot.get("data"), dict):
+            dataset_name = self._config_snapshot["data"].get("train_file", "dataset")
+        else:
+            dataset_name = self._config_snapshot.get("dataset", "dataset")
+        
+        # Generate timestamp and create safe names
+        timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
         safe_model = str(model_name).split("/")[-1]
         safe_dataset = Path(str(dataset_name)).stem or "dataset"
+        
         return f"{safe_model}-{safe_dataset}-{timestamp}"
 
     @staticmethod
     def _detect_git_sha() -> Optional[str]:
+        """Detect the git SHA of the current repository."""
         try:
             import subprocess
 
@@ -244,6 +299,7 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
 
     @staticmethod
     def _is_number(value: Any) -> bool:
+        """Check if a value is a number that can be converted to float."""
         try:
             float(value)
             return True

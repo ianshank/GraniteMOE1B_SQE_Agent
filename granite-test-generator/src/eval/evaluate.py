@@ -11,7 +11,7 @@ from typing import Any, Dict, Iterable, Mapping, MutableMapping, Optional, Seque
 
 try:  # pragma: no cover - optional torch dependency
     import torch
-except Exception:  # pragma: no cover - fallback when torch unavailable
+except ImportError:  # pragma: no cover - fallback when torch unavailable
     torch = None  # type: ignore
 
 from src.telemetry import ExperimentLogger
@@ -34,7 +34,21 @@ def evaluate(
     output_dir: Path | str = Path("artifacts/eval"),
     epoch: Optional[int] = None,
 ) -> Dict[str, float]:
-    """Run model evaluation and persist metrics and artifacts."""
+    """
+    Run model evaluation and persist metrics and artifacts.
+    
+    Args:
+        model: Model to evaluate
+        dataloader: Dataloader with evaluation data
+        task_type: Type of task ('classification', 'regression', or 'text')
+        device: Device to run evaluation on ('cpu' or 'cuda')
+        experiment_logger: Optional experiment logger for telemetry
+        output_dir: Directory to save evaluation artifacts
+        epoch: Optional epoch number for logging
+        
+    Returns:
+        Dictionary of evaluation metrics
+    """
     device = device or ("cuda" if torch is not None and torch.cuda.is_available() else "cpu")
     if torch is not None and hasattr(model, "to"):
         model = model.to(device)  # type: ignore[assignment]
@@ -50,47 +64,55 @@ def evaluate(
     forward_ctx = torch.no_grad if torch is not None else nullcontext  # type: ignore[assignment]
 
     for step, batch in enumerate(dataloader, start=1):
-        inputs, labels = _split_batch(batch)
-        start = time.perf_counter()
-        with forward_ctx():  # type: ignore[operator]
-            preds = _forward(model, inputs, device)
-        latency_ms = (time.perf_counter() - start) * 1000.0
-        latencies_ms.append(latency_ms)
-        LOGGER.debug("Eval step %s latency %.3fms", step, latency_ms)
+        try:
+            inputs, labels = _split_batch(batch)
+            start = time.perf_counter()
+            with forward_ctx():  # type: ignore[operator]
+                preds = _forward(model, inputs, device)
+            latency_ms = (time.perf_counter() - start) * 1000.0
+            latencies_ms.append(latency_ms)
+            LOGGER.debug("Eval step %s latency %.3fms", step, latency_ms)
 
-        if isinstance(preds, tuple):
-            primary, secondary = preds
+            if isinstance(preds, tuple):
+                primary, secondary = preds
+            else:
+                primary, secondary = preds, None
+
+            primary_items = _flatten(primary)
+            predictions.extend(primary_items)
+
+            if secondary is not None:
+                secondary_items = _flatten_probabilities(secondary, len(primary_items))
+                probabilities.extend(secondary_items)
+
+            targets.extend(_flatten(labels))
+        except Exception as e:
+            LOGGER.error(f"Error in evaluation step {step}: {e}")
+            continue
+
+    try:
+        if task_type == "classification":
+            probs_iter = probabilities if probabilities else None
+            metrics = compute_classification_metrics(predictions, targets, probs_iter)
+        elif task_type == "regression":
+            metrics = compute_regression_metrics(predictions, targets)
+        elif task_type == "text":
+            metrics = compute_text_generation_metrics(
+                [str(pred) for pred in predictions],
+                [[str(label)] if not isinstance(label, (list, tuple)) else label for label in targets],
+                latencies_ms=latencies_ms,
+            )
         else:
-            primary, secondary = preds, None
+            raise ValueError(f"Unsupported task type: {task_type}")
 
-        primary_items = _flatten(primary)
-        predictions.extend(primary_items)
+        if task_type != "text":
+            metrics["latency_ms_avg"] = float(sum(latencies_ms) / max(len(latencies_ms), 1))
+            metrics["latency_ms_p95"] = float(_percentile(latencies_ms, 95))
 
-        if secondary is not None:
-            secondary_items = _flatten_probabilities(secondary, len(primary_items))
-            probabilities.extend(secondary_items)
-
-        targets.extend(_flatten(labels))
-
-    if task_type == "classification":
-        probs_iter = probabilities if probabilities else None
-        metrics = compute_classification_metrics(predictions, targets, probs_iter)
-    elif task_type == "regression":
-        metrics = compute_regression_metrics(predictions, targets)
-    elif task_type == "text":
-        metrics = compute_text_generation_metrics(
-            [str(pred) for pred in predictions],
-            [[str(label)] if not isinstance(label, (list, tuple)) else label for label in targets],
-            latencies_ms=latencies_ms,
-        )
-    else:
-        raise ValueError(f"Unsupported task type: {task_type}")
-
-    if task_type != "text":
-        metrics["latency_ms_avg"] = float(sum(latencies_ms) / max(len(latencies_ms), 1))
-        metrics["latency_ms_p95"] = float(_percentile(latencies_ms, 95))
-
-    results.update({key: float(value) for key, value in metrics.items() if _is_number(value)})
+        results.update({key: float(value) for key, value in metrics.items() if _is_number(value)})
+    except ValueError as e:
+        LOGGER.warning(f"Error computing metrics: {e}")
+        results = {"error": 1.0}
 
     step_index = epoch if epoch is not None else len(predictions)
     if experiment_logger is not None:
