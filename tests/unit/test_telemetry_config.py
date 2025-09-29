@@ -10,7 +10,7 @@ import os
 import sys
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 import pytest
 
@@ -86,7 +86,7 @@ class TestTagSplitting:
             (["tag1", 123], ["tag1", "123"]),
         ],
     )
-    def test_split_tags(self, value: Any, expected: list[str]) -> None:
+    def test_split_tags(self, value: Any, expected: List[str]) -> None:
         """Verify tag splitting handles various input formats correctly."""
         result = _split_tags(value)
         logger.debug("_split_tags(%r) = %r (expected: %r)", value, result, expected)

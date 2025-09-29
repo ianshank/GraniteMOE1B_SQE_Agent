@@ -214,7 +214,12 @@ def _save_checkpoint(model: nn.Module, output_dir: Path) -> Path:
 
 
 def run_training(argv: Optional[Iterable[str]] = None) -> TrainingArtifacts:
-    load_dotenv()
+    try:
+        load_dotenv()
+    except ImportError:
+        LOGGER.warning("python-dotenv is not installed; skipping loading .env file.")
+    except Exception as e:
+        LOGGER.warning(f"Could not load .env file: {e}")
     args = parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 

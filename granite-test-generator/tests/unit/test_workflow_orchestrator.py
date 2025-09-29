@@ -1,3 +1,49 @@
+"""Unit tests for dotenv loading in train.py."""
+
+import builtins
+import importlib
+import sys
+from types import ModuleType
+from typing import Any
+
+import pytest
+
+
+def _reload_train() -> ModuleType:
+    """Reload train module to re-evaluate import-time code if needed."""
+    if "train" in sys.modules:
+        return importlib.reload(sys.modules["train"])  # type: ignore[arg-type]
+    import train  # type: ignore
+
+    return train
+
+
+def test_load_dotenv_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify missing python-dotenv is handled gracefully."""
+    train = _reload_train()
+
+    # Simulate ImportError when calling load_dotenv
+    def _raise_import_error(*_: Any, **__: Any) -> None:
+        raise ImportError("python-dotenv not installed")
+
+    monkeypatch.setattr(train, "load_dotenv", _raise_import_error, raising=True)
+
+    # Ensure no exception is raised
+    train.run_training(argv=["--epochs", "0"])  # minimal run
+
+
+def test_load_dotenv_syntax_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify syntax errors in .env are handled and only warn."""
+    train = _reload_train()
+
+    def _raise_value_error(*_: Any, **__: Any) -> None:
+        raise ValueError("Invalid .env syntax")
+
+    monkeypatch.setattr(train, "load_dotenv", _raise_value_error, raising=True)
+
+    # Ensure no exception is raised
+    train.run_training(argv=["--epochs", "0"])  # minimal run
+
 import pytest
 import asyncio
 from unittest.mock import Mock, AsyncMock, patch

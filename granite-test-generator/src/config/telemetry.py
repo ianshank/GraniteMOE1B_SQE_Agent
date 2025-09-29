@@ -161,7 +161,11 @@ def load_telemetry_from_sources(
     def _get(mapping: Mapping[str, Any], key: str) -> Any:
         if hasattr(mapping, key):
             return getattr(mapping, key)
-        return mapping.get(key)
+        # Support argparse.Namespace or custom objects without .get
+        try:
+            return mapping.get(key)  # type: ignore[attr-defined]
+        except Exception:
+            return None
 
     cli_enable_wandb = _normalize_bool(_get(cli_args, "enable_wandb"))
     cli_enable_tb = _normalize_bool(_get(cli_args, "enable_tensorboard"))
@@ -190,7 +194,8 @@ def load_telemetry_from_sources(
             overrides[key] = value
 
     if "wandb_tags" in overrides:
-        overrides["wandb_tags"] = _split_tags(overrides["wandb_tags"])
+        # Normalization handled by the Pydantic validator on TelemetryConfig
+        pass
 
     if "log_interval_steps" in overrides:
         try:

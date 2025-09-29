@@ -97,7 +97,19 @@ class GraniteMoETrainer:
         self.config = config
         self.model = None
         self.tokenizer = None
-        LOGGER.info("Initialized GraniteMoETrainer with config: %s", config)
+        # Only log non-sensitive keys to avoid leaking secrets
+        safe_keys = ["model_name", "epochs", "batch_size", "output_dir"]
+        sanitized_config = {k: v for k, v in config.items() if k in safe_keys}
+        LOGGER.info("Initialized GraniteMoETrainer with config (sanitized): %s", sanitized_config)
+
+    # Compatibility for inference in generation paths
+    def load_model_for_inference(self) -> None:
+        """Alias to training loader for simple inference flows.
+
+        Some integration code expects `load_model_for_inference`. For our
+        lightweight trainer, the same loading routine is sufficient.
+        """
+        self.load_model_for_training()
 
     def load_model_for_training(self):
         """Load the model and tokenizer for training."""

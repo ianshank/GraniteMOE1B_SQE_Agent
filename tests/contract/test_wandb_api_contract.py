@@ -119,7 +119,9 @@ class TestWandBApiContract:
         self.mock_run.name = "test-run"
         self.mock_run.state = "finished"
         self.mock_run.summary = {}
-        self.mock_run.config = {}
+        # Use a MagicMock so we can assert update() call contract reliably
+        self.mock_run.config = mock.MagicMock()
+        self.mock_run.config.update = mock.MagicMock()
         self.mock_run.project = "test-project"
         self.mock_run.entity = "test-entity"
         
@@ -150,15 +152,19 @@ class TestWandBApiContract:
         # Set up offline run dir with expected structure
         mock_sync = mock.MagicMock()
         
-        with mock.patch("wandb.sync", mock_sync):
-            self.client.sync_run("path/to/offline/run", dry_run=False)
-            
-            # Verify wandb.sync was called correctly
-            mock_sync.assert_called_once()
-            # Get the args passed to wandb.sync
-            args, kwargs = mock_sync.call_args
-            assert len(args) == 1
-            assert args[0] == "path/to/offline/run"
+        # Some wandb versions don't expose `wandb.sync`; skip if unavailable
+        if hasattr(wandb, "sync"):
+            with mock.patch("wandb.sync", mock_sync):
+                self.client.sync_run("path/to/offline/run", dry_run=False)
+                
+                # Verify wandb.sync was called correctly
+                mock_sync.assert_called_once()
+                # Get the args passed to wandb.sync
+                args, kwargs = mock_sync.call_args
+                assert len(args) == 1
+                assert args[0] == "path/to/offline/run"
+        else:
+            pytest.skip("wandb.sync not available in this environment")
     
     def test_update_run_config_contract(self) -> None:
         """Test contract for updating run configuration."""
@@ -223,7 +229,8 @@ class TestWandBApiContract:
         
         # Check that we got the run with the highest val_accuracy
         assert best_run.name == "run-2"
-        assert best_run.summary["val_accuracy"] == 0.9
+        # Allow tiny floating error tolerance
+        assert best_run.summary["val_accuracy"] == pytest.approx(0.9, rel=1e-9)
 
 
 @pytest.mark.skipif(not HAS_WANDB, reason="W&B not available")

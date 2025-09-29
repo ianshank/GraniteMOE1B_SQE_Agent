@@ -36,7 +36,7 @@ def evaluate(
     task_type: str = "classification",
     device: Optional[str] = None,
     experiment_logger: Optional[ExperimentLogger] = None,
-    output_dir: Path | str = Path("artifacts/eval"),
+    output_dir: Union[Path, str] = Path("artifacts/eval"),
     epoch: Optional[int] = None,
     predictions: Optional[Union[List[Any], np.ndarray]] = None,
     targets: Optional[Union[List[Any], np.ndarray]] = None,
@@ -97,7 +97,7 @@ def _evaluate_with_dataloader(
     task_type: str,
     device: Optional[str] = None,
     experiment_logger: Optional[ExperimentLogger] = None,
-    output_dir: Path | str = Path("artifacts/eval"),
+    output_dir: Union[Path, str] = Path("artifacts/eval"),
     epoch: Optional[int] = None,
 ) -> Dict[str, float]:
     """Evaluate using a dataloader (newer approach)."""

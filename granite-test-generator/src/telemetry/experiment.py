@@ -7,7 +7,8 @@ import logging
 import os
 import time
 from contextlib import AbstractContextManager
-from datetime import datetime, UTC
+# datetime.UTC is Python 3.11+. Provide compatibility fallback to UTC tzinfo
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Union
 
@@ -289,7 +290,7 @@ class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
             dataset_name = self._config_snapshot.get("dataset", "dataset")
         
         # Generate timestamp and create safe names
-        timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
         safe_model = str(model_name).split("/")[-1]
         safe_dataset = Path(str(dataset_name)).stem or "dataset"
         
