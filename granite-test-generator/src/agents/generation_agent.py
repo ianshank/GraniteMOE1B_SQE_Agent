@@ -202,7 +202,11 @@ Generate one test case using the exact format above.
     
     def _generate_with_transformers(self, requirement: str) -> str:
         """Generate test case using transformers library when MLX is not available."""
-        import torch
+        try:
+            import torch
+        except ImportError:
+            self._logger.warning("torch is not available, using enhanced template for test case generation")
+            return self._enhanced_template_generate(requirement)
         
         try:
             # Load transformers model if not already loaded

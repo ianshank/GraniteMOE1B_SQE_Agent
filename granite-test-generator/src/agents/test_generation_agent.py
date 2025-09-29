@@ -17,7 +17,6 @@ except Exception:  # pragma: no cover - optional dependency fallback for CI/test
         return None
 from typing import List, Dict, Any, Optional
 import asyncio
-import torch
 from typing import TYPE_CHECKING
 from src.utils.constants import TEMPLATE_PATTERNS
 from src.models.test_case_schemas import (
