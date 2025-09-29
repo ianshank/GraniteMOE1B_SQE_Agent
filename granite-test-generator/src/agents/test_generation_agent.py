@@ -46,10 +46,13 @@ class TestGenerationAgent:
     def __init__(self, granite_trainer: 'GraniteMoETrainer', 
                  rag_retriever: 'RAGRetriever', 
                  cag_cache: 'CAGCache'):
+        import logging
         self.granite_model = granite_trainer
         self.rag_retriever = rag_retriever
         self.cag_cache = cag_cache
         self.tools = self._initialize_tools()
+        # Dedicated logger for this agent instance to ensure consistent logging behavior
+        self._logger = logging.getLogger(__name__)
         
     def _initialize_tools(self) -> List[Tool]:
         """Initialize tools for the agent"""
@@ -146,17 +149,14 @@ Format your response with [TEST_CASE][SUMMARY]...[/SUMMARY][INPUT_DATA]...[/INPU
     
     def _generate_with_transformers(self, requirement: str) -> str:
         """Generate test case using transformers library when MLX is not available."""
-        import logging
-        logger = logging.getLogger(__name__)
-        
         try:
             # Load transformers model if not already loaded
             if not getattr(self.granite_model, 'model', None):
-                logger.info("Loading transformers model for test case generation")
+                self._logger.info("Loading transformers model for test case generation")
                 self.granite_model.load_model_for_training()
             
             if not getattr(self.granite_model, 'model', None):
-                logger.warning("Transformers model not available, falling back to template generation")
+                self._logger.warning("Transformers model not available, falling back to template generation")
                 return self._template_generate(requirement)
             
             # Create enhanced prompt for transformers
@@ -182,6 +182,13 @@ Format your response with [TEST_CASE][SUMMARY]...[/SUMMARY][INPUT_DATA]...[/INPU
             # Tokenize and generate
             inputs = self.granite_model.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
             
+            # Import torch lazily to avoid hard dependency at module import time
+            try:
+                import torch  # type: ignore
+            except (ImportError, ModuleNotFoundError):
+                self._logger.warning("torch not available, falling back to template generation")
+                return self._template_generate(requirement)
+
             with torch.no_grad():
                 outputs = self.granite_model.model.generate(
                     **inputs,
@@ -200,11 +207,11 @@ Format your response with [TEST_CASE][SUMMARY]...[/SUMMARY][INPUT_DATA]...[/INPU
             else:
                 response = generated_text.strip()
             
-            logger.debug(f"Generated test case using transformers model: {len(response)} characters")
+            self._logger.debug(f"Generated test case using transformers model: {len(response)} characters")
             return response
             
         except Exception as e:
-            logger.error(f"Error generating with transformers model: {e}")
+            self._logger.error(f"Error generating with transformers model: {e}")
             return self._template_generate(requirement)
 
     def _template_generate(self, requirement: str) -> str:

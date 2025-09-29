@@ -156,8 +156,29 @@ class TestWorkflowOrchestrator:
         assert "team2" in orchestrator.team_configs
     
     @pytest.mark.asyncio
-    async def test_process_all_teams_empty(self, orchestrator):
+    async def test_process_all_teams_empty(self, orchestrator, monkeypatch):
         """Test processing with no registered teams"""
+        # Patch the Path.exists method to return False so the default team isn't created
+        from pathlib import Path
+        original_exists = Path.exists
+        
+        def mock_exists(self):
+            if str(self) == "data/requirements":
+                return False
+            return original_exists(self)
+            
+        monkeypatch.setattr(Path, "exists", mock_exists)
+        
+        # Also patch the glob method to return an empty list
+        original_glob = Path.glob
+        
+        def mock_glob(self, pattern):
+            if str(self) == "data/requirements" and "**/*" in pattern:
+                return []
+            return original_glob(self, pattern)
+            
+        monkeypatch.setattr(Path, "glob", mock_glob)
+        
         results = await orchestrator.process_all_teams()
         assert results == {}
     

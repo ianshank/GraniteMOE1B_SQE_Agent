@@ -62,10 +62,18 @@ def main() -> None:
         
         # Parse command line arguments
         import argparse
+.        import sys
         parser = argparse.ArgumentParser(description="Granite Test Case Generator")
         parser.add_argument("--config", type=str, default="config/model_config.yaml", help="Path to configuration file")
         parser.add_argument("--multiple-suites", action="store_true", help="Generate multiple test suites (functional, regression, E2E)")
-        args = parser.parse_args()
+        
+        # In test environments, we might have pytest arguments like '-q tests'
+        # Only parse known args to avoid errors in test environments
+        args, unknown = parser.parse_known_args()
+        
+        # If running under pytest, log the unknown arguments
+        if unknown:
+            logger.debug(f"Ignoring unknown arguments for testing: {unknown}")
         
         # Run the main function with command line arguments
         asyncio.run(granite_main(
