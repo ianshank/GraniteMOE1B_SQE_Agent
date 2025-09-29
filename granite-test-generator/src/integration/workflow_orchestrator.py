@@ -193,7 +193,32 @@ class WorkflowOrchestrator:
         
         if not self.team_configs:
             logger.warning("No teams registered for processing.")
-            return results
+            
+            # Check if we have any local requirements
+            from pathlib import Path
+            default_requirements_dir = Path("data/requirements")
+            if default_requirements_dir.exists() and any(default_requirements_dir.glob("**/*")):
+                logger.info("Found local requirements but no teams registered. Creating default team.")
+                from src.integration.team_connectors import LocalFileSystemConnector
+                
+                # Create a default team with local connector
+                default_team = TeamConfiguration(
+                    team_name="default",
+                    connector=LocalFileSystemConnector(
+                        input_directory=str(default_requirements_dir),
+                        output_directory="output"
+                    ),
+                    rag_enabled=True,
+                    cag_enabled=True,
+                    auto_push=False
+                )
+                
+                # Register the default team
+                self.team_configs["default"] = default_team
+                logger.info("Registered default team with local requirements.")
+            else:
+                # No teams and no local requirements
+                return results
         
         for team_name, config in self.team_configs.items():
             logger.debug(f"Creating processing task for team: {team_name}")
