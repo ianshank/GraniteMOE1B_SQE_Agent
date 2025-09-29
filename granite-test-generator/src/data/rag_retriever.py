@@ -329,3 +329,103 @@ class RAGRetriever:
         # Sort and return top-k similar to other retrievers
         results.sort(key=lambda d: d.score, reverse=True)
         return results
+
+    # --------------------- Phase 2: Ranking & Snippet API ---------------------
+    def rank_documents_with_weights(
+        self,
+        docs: List[Dict[str, Any]],
+        *,
+        w_similarity: float = 0.4,
+        w_quality: float = 0.3,
+        w_reuse: float = 0.3,
+    ) -> List[Dict[str, Any]]:
+        """Blend similarity, quality, and reusability into a single ranking score.
+
+        Args:
+            docs: Items with keys 'relevance_score' and 'metadata' including
+                  'quality_score' and 'reusability_score'.
+            w_similarity: Weight for similarity score.
+            w_quality: Weight for quality score.
+            w_reuse: Weight for reusability score.
+
+        Returns:
+            New list sorted by blended score desc. Each dict gains 'blended_score'.
+        """
+        ranked: List[Dict[str, Any]] = []
+        for d in docs:
+            try:
+                sim = float(d.get('relevance_score', 0.0))
+                meta = d.get('metadata', {}) or {}
+                qual = float(meta.get('quality_score', 0.0))
+                reuse = float(meta.get('reusability_score', 0.0))
+                blended = (sim * w_similarity) + (qual * w_quality) + (reuse * w_reuse)
+                d2 = dict(d)
+                d2['blended_score'] = blended
+                ranked.append(d2)
+            except Exception as e:  # pragma: no cover - defensive
+                logger.debug("Skipping doc during ranking due to error: %s", e)
+        ranked.sort(key=lambda x: x.get('blended_score', 0.0), reverse=True)
+        logger.debug("Ranked %d documents using weights (sim=%.2f, qual=%.2f, reuse=%.2f)", len(ranked), w_similarity, w_quality, w_reuse)
+        return ranked
+
+    def retrieve_code_snippets(
+        self,
+        query: str,
+        *,
+        team_context: Optional[str] = None,
+        language_filter: Optional[str] = None,
+        k: int = 10,
+        rank_weights: Optional[Dict[str, float]] = None,
+    ) -> List["CodeSnippet"]:
+        """Retrieve top-K code snippets, ranked by blended score.
+
+        Note: This does not change prompts; it provides a structured API for
+        Phase 2 that higher layers can use in Phase 3.
+        """
+        from src.rag.models import CodeSnippet, CodeLanguage, CodePattern  # local import to avoid cycles
+
+        # Pull weights from caller (or defaults) to avoid hard-coding
+        w = rank_weights or {"similarity": 0.4, "quality": 0.3, "reusability": 0.3}
+        raw_docs = self.retrieve_relevant_context(query, team_context=team_context, k=max(k * 2, k))
+        # Filter for code-like docs using available metadata and language filter
+        filtered = []
+        for d in raw_docs:
+            meta = d.get('metadata', {}) or {}
+            lang = meta.get('language')
+            if language_filter and lang and str(lang).lower() != str(language_filter).lower():
+                continue
+            filtered.append(d)
+
+        ranked = self.rank_documents_with_weights(
+            filtered,
+            w_similarity=float(w.get('similarity', 0.4)),
+            w_quality=float(w.get('quality', 0.3)),
+            w_reuse=float(w.get('reusability', 0.3)),
+        )
+
+        # Map to CodeSnippet
+        snippets: List[CodeSnippet] = []
+        for item in ranked[:k]:
+            meta = item.get('metadata', {}) or {}
+            content = item.get('content', '')
+            try:
+                snippet = CodeSnippet(
+                    content=content or "",
+                    language=CodeLanguage(meta.get('language', 'python')),
+                    pattern_type=CodePattern(meta.get('pattern_type', 'configuration')),
+                    description=meta.get('description', ''),
+                    file_path=meta.get('file_path'),
+                    line_start=meta.get('line_start'),
+                    line_end=meta.get('line_end'),
+                    quality_score=float(meta.get('quality_score', 0.0)),
+                    complexity_score=float(meta.get('complexity_score', 0.0)),
+                    reusability_score=float(meta.get('reusability_score', 0.0)),
+                    metadata={**meta, "similarity_score": float(item.get('relevance_score', 0.0)), "blended_score": float(item.get('blended_score', 0.0))},
+                )
+                snippets.append(snippet)
+            except Exception as e:  # pragma: no cover - defensive
+                logger.debug("Failed to map document to CodeSnippet: %s", e)
+                continue
+
+        logger.debug("retrieve_code_snippets returned %d items (k=%d)", len(snippets), k)
+        return snippets
