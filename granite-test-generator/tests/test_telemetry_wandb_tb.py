@@ -81,12 +81,23 @@ def fake_wandb(monkeypatch):
     return run
 
 
-@pytest.fixture
-def fake_summary_writer(monkeypatch, tmp_path):
-    from torch.utils import tensorboard
-
-    monkeypatch.setattr(tensorboard, "SummaryWriter", DummySummaryWriter)
-    return tmp_path
+    @pytest.fixture
+    def fake_summary_writer(monkeypatch, tmp_path):
+        # Create a mock module for tensorboard
+        mock_tensorboard = types.ModuleType("tensorboard")
+        sys.modules["tensorboard"] = mock_tensorboard
+        
+        # Create a mock module for torch.utils.tensorboard
+        mock_torch_utils = types.ModuleType("torch.utils")
+        mock_torch_tensorboard = types.ModuleType("torch.utils.tensorboard")
+        mock_torch_utils.tensorboard = mock_torch_tensorboard
+        sys.modules["torch.utils"] = mock_torch_utils
+        sys.modules["torch.utils.tensorboard"] = mock_torch_tensorboard
+        
+        # Set the SummaryWriter attribute
+        mock_torch_tensorboard.SummaryWriter = DummySummaryWriter
+        
+        return tmp_path
 
 
 def test_experiment_logger_full_stack(fake_wandb, fake_summary_writer, tmp_path, monkeypatch):

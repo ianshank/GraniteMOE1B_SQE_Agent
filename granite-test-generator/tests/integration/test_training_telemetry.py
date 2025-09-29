@@ -73,9 +73,20 @@ def stub_wandb(monkeypatch):
 
 @pytest.fixture
 def stub_summary_writer(monkeypatch):
-    from torch.utils import tensorboard
-
-    monkeypatch.setattr(tensorboard, "SummaryWriter", _IntegrationWriter)
+    # Create a mock module for tensorboard
+    mock_tensorboard = types.ModuleType("tensorboard")
+    sys.modules["tensorboard"] = mock_tensorboard
+    
+    # Create a mock module for torch.utils.tensorboard
+    mock_torch_utils = types.ModuleType("torch.utils")
+    mock_torch_tensorboard = types.ModuleType("torch.utils.tensorboard")
+    mock_torch_utils.tensorboard = mock_torch_tensorboard
+    sys.modules["torch.utils"] = mock_torch_utils
+    sys.modules["torch.utils.tensorboard"] = mock_torch_tensorboard
+    
+    # Set the SummaryWriter attribute
+    mock_torch_tensorboard.SummaryWriter = _IntegrationWriter
+    
     return _IntegrationWriter
 
 
