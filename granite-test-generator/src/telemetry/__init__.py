@@ -1,4 +1,4 @@
-"""Telemetry and experiment tracking utilities."""
+"""Telemetry module for experiment tracking."""
 
 from .experiment import ExperimentLogger
 

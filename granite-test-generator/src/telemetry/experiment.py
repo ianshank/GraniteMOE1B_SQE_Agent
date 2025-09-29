@@ -1,254 +1,317 @@
-"""
-Experiment logging for ML training and evaluation.
+"""Unified experiment logging for W&B and TensorBoard."""
 
-This module provides a unified interface for logging metrics, parameters, and
-artifacts to multiple backends (W&B, TensorBoard) with graceful degradation.
-"""
+from __future__ import annotations
 
+import json
 import logging
 import os
-import sys
+import time
+from contextlib import AbstractContextManager
+# datetime.UTC is Python 3.11+. Provide compatibility fallback to UTC tzinfo
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Mapping, Optional, Union
 
-logger = logging.getLogger(__name__)
+from src.config.telemetry import TelemetryConfig
+
+LOGGER = logging.getLogger(__name__)
 
 
-class ExperimentLogger:
-    """
-    Unified experiment logger with support for W&B and TensorBoard.
+class ExperimentLogger(AbstractContextManager["ExperimentLogger"]):
+    """Coordinate Weights & Biases and TensorBoard logging with graceful degradation."""
 
-    This class provides a facade for logging metrics, parameters, and artifacts
-    to multiple backends (W&B, TensorBoard) with graceful degradation when
-    dependencies are not available.
+    def __init__(
+        self,
+        telemetry_cfg: TelemetryConfig,
+        config_snapshot: Optional[Mapping[str, Any]] = None,
+        run_name: Optional[str] = None,
+    ) -> None:
+        """
+        Initialize the experiment logger.
+        
+        Args:
+            telemetry_cfg: Configuration for telemetry
+            config_snapshot: Configuration snapshot to log
+            run_name: Optional explicit run name
+        """
+        self._cfg = telemetry_cfg
+        self._config_snapshot = dict(config_snapshot) if config_snapshot else {}
+        self._run_name = run_name
+        self._wandb_run: Optional[Any] = None
+        self._tb_writer: Optional[Any] = None
+        self._start_time: Optional[float] = None
+        self._git_sha: Optional[str] = None
+        self._closed = False
 
-    Args:
-        config: TelemetryConfig instance
-        config_snapshot: Optional snapshot of the full config for logging
-    """
-
-    def __init__(self, config, config_snapshot: Optional[Dict[str, Any]] = None):
-        """Initialize the experiment logger."""
-        self._config = config
-        self._config_snapshot = config_snapshot or {}
-        self._wandb_run = None
-        self._tb_writer = None
-        self._run_name = self._derive_run_name()
-
-        # Initialize backends
-        self._init_wandb()
-        self._init_tensorboard()
-
-    def __enter__(self):
-        """Context manager entry."""
+    def __enter__(self) -> "ExperimentLogger":
+        self.start_run()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit with cleanup."""
-        self.close()
-        return False  # Don't suppress exceptions
+    def __exit__(self, exc_type, exc, tb) -> None:
+        self.finish()
 
-    def _derive_run_name(self) -> str:
-        """Derive a run name from the config snapshot."""
-        if self._config.wandb_name:
-            return self._config.wandb_name
+    def start_run(self) -> None:
+        """Start the experiment run, initializing loggers."""
+        if self._start_time is not None:
+            return
+        self._start_time = time.time()
+        self._run_name = self._run_name or self._derive_run_name()
+        self._git_sha = self._detect_git_sha()
+        LOGGER.debug("Starting experiment run: %s", self._run_name)
 
-        # Try to derive from config snapshot
-        model_name = "unknown"
-        data_name = "unknown"
+        if self._cfg.enable_wandb:
+            self._start_wandb_run()
+        else:
+            LOGGER.debug("W&B telemetry disabled by configuration")
+
+        if self._cfg.enable_tensorboard:
+            self._start_tensorboard_writer()
+        else:
+            LOGGER.debug("TensorBoard telemetry disabled by configuration")
 
         if self._config_snapshot:
-            model = self._config_snapshot.get("model")
-            if model:
-                if isinstance(model, dict):
-                    model_name = model.get("name", model.get("type", "unknown"))
-                else:
-                    model_name = str(model)
+            self.log_params(**self._config_snapshot)
 
-            data = self._config_snapshot.get("data")
-            if data:
-                if isinstance(data, dict):
-                    data_name = data.get("name", data.get("type", "unknown"))
-                else:
-                    data_name = str(data)
-
-        return f"{model_name}-{data_name}"
-
-    def _init_wandb(self):
-        """Initialize W&B if enabled and available."""
-        if not self._config.enable_wandb:
-            return
-
-        try:
-            import wandb
-
-            self._wandb_run = wandb.init(
-                project=self._config.wandb_project,
-                entity=self._config.wandb_entity,
-                tags=self._config.wandb_tags,
-                group=self._config.wandb_group,
-                job_type=self._config.wandb_job_type,
-                name=self._run_name,
-                notes=self._config.wandb_notes,
-                config=self._config_snapshot,
-            )
-            logger.info(
-                f"W&B initialized: {self._wandb_run.name} "
-                f"(project={self._config.wandb_project}, "
-                f"entity={self._config.wandb_entity})"
-            )
-        except ImportError:
-            logger.warning("W&B not installed, skipping W&B initialization")
-        except Exception as e:
-            logger.warning(f"Failed to initialize W&B: {e}")
-
-    def _init_tensorboard(self):
-        """Initialize TensorBoard if enabled and available."""
-        if not self._config.enable_tensorboard:
-            return
-
-        try:
-            from torch.utils.tensorboard import SummaryWriter
-
-            log_dir = os.path.join(self._config.tb_log_dir, self._run_name)
-            self._tb_writer = SummaryWriter(log_dir=log_dir)
-            logger.info(f"TensorBoard initialized: {log_dir}")
-        except ImportError:
-            logger.warning("TensorBoard not installed, skipping TensorBoard initialization")
-        except Exception as e:
-            logger.warning(f"Failed to initialize TensorBoard: {e}")
-
-    def log_metrics(self, step: int, **metrics: float):
+    def log_metrics(self, step: int, **metrics: float) -> None:
         """
-        Log metrics to all enabled backends.
-
+        Log metrics at a specific step.
+        
         Args:
             step: Training step or epoch
-            **metrics: Key-value pairs of metrics to log
+            **metrics: Metrics to log as key-value pairs
         """
         if not metrics:
             return
+        filtered = {k: float(v) for k, v in metrics.items() if self._is_number(v)}
+        if not filtered:
+            return
+        LOGGER.debug("Logging metrics at step %s: %s", step, filtered)
 
-        # Log to W&B
-        if self._wandb_run:
+        if self._wandb_run is not None:
+            payload = dict(filtered)
+            payload["step"] = step
             try:
-                self._wandb_run.log(metrics, step=step)
-            except Exception as e:
-                logger.warning(f"Failed to log metrics to W&B: {e}")
+                self._wandb_run.log(payload)
+            except Exception as exc:  # pragma: no cover - defensive safety
+                LOGGER.warning("Failed to log metrics to W&B: %s", exc)
 
-        # Log to TensorBoard
-        if self._tb_writer:
-            try:
-                for key, value in metrics.items():
+        if self._tb_writer is not None:
+            for key, value in filtered.items():
+                try:
                     self._tb_writer.add_scalar(key, value, step)
-            except Exception as e:
-                logger.warning(f"Failed to log metrics to TensorBoard: {e}")
+                except Exception as exc:  # pragma: no cover - defensive safety
+                    LOGGER.warning("Failed to write TensorBoard metric %s: %s", key, exc)
+            self._tb_writer.flush()
 
-    def log_params(self, **params: Any):
+    def log_params(self, **params: Any) -> None:
         """
-        Log parameters to all enabled backends.
-
+        Log parameters for the experiment.
+        
         Args:
-            **params: Key-value pairs of parameters to log
+            **params: Parameters to log as key-value pairs
         """
         if not params:
             return
-
-        # Log to W&B
-        if self._wandb_run:
+        LOGGER.debug("Logging parameters: %s", params)
+        if self._wandb_run is not None:
             try:
-                for key, value in params.items():
-                    self._wandb_run.config[key] = value
-            except Exception as e:
-                logger.warning(f"Failed to log parameters to W&B: {e}")
+                config = getattr(self._wandb_run, "config", None)
+                if config is not None:
+                    config.update(params, allow_val_change=True)
+            except Exception as exc:  # pragma: no cover - defensive safety
+                LOGGER.warning("Failed to update W&B config: %s", exc)
 
-        # Log to TensorBoard
-        if self._tb_writer:
+        if self._tb_writer is not None:
             try:
-                # TensorBoard doesn't have a direct equivalent for parameters,
-                # so we log them as text
-                import json
+                self._tb_writer.add_text("hyperparameters", json.dumps(params, indent=2))
+            except Exception as exc:  # pragma: no cover - defensive safety
+                LOGGER.warning("Failed to write TensorBoard params: %s", exc)
 
-                self._tb_writer.add_text(
-                    "parameters", f"```json\n{json.dumps(params, indent=2)}\n```"
-                )
-            except Exception as e:
-                logger.warning(f"Failed to log parameters to TensorBoard: {e}")
-
-    def set_summary(self, **summary: Any):
+    def log_artifact(self, path: Any, name: Optional[str] = None, type: str = "artifact") -> None:
         """
-        Set summary metrics (e.g., final metrics).
-
-        Args:
-            **summary: Key-value pairs of summary metrics
-        """
-        if not summary:
-            return
-
-        # Set W&B summary
-        if self._wandb_run:
-            try:
-                for key, value in summary.items():
-                    self._wandb_run.summary[key] = value
-            except Exception as e:
-                logger.warning(f"Failed to set summary in W&B: {e}")
-
-        # TensorBoard doesn't have a direct equivalent for summary
-
-    def log_artifact(
-        self, path: Union[str, Path], name: Optional[str] = None, artifact_type: str = "model"
-    ):
-        """
-        Log an artifact (e.g., model checkpoint) to all enabled backends.
-
+        Log an artifact file.
+        
         Args:
             path: Path to the artifact file
-            name: Optional name for the artifact (defaults to filename)
-            artifact_type: Type of artifact (e.g., model, dataset)
+            name: Optional name for the artifact
+            type: Type of artifact (e.g., "model", "dataset")
         """
-        if not self._config.log_artifacts:
-            logger.info(f"Artifact logging disabled, skipping: {path}")
+        if not self._cfg.log_artifacts:
+            LOGGER.info(f"Artifact logging disabled, skipping: {path}")
             return
 
-        path_obj = Path(path)
-        if not path_obj.exists():
-            logger.warning(f"Artifact file not found, skipping: {path}")
+        file_path = Path(path)
+        if not file_path.exists():
+            LOGGER.warning("Artifact path %s does not exist; skipping upload", file_path)
             return
 
-        artifact_name = name or path_obj.name
+        artifact_name = name or file_path.name
 
-        # Log to W&B
-        if self._wandb_run:
+        if self._wandb_run is not None:
             try:
-                import wandb
+                import wandb  # type: ignore
 
-                artifact = wandb.Artifact(name=artifact_name, type=artifact_type)
-                artifact.add_file(str(path_obj))
+                artifact = wandb.Artifact(name=artifact_name, type=type)
+                artifact.add_file(str(file_path))
                 self._wandb_run.log_artifact(artifact)
-                logger.info(f"Logged artifact to W&B: {artifact_name}")
-            except ImportError:
-                logger.warning("W&B not installed, skipping artifact logging")
-            except Exception as e:
-                logger.warning(f"Failed to log artifact to W&B: {e}")
+                LOGGER.info("Logged artifact %s to W&B", file_path)
+            except Exception as exc:  # pragma: no cover - defensive safety
+                LOGGER.warning("Failed to log artifact to W&B: %s", exc)
 
-        # TensorBoard doesn't have a direct equivalent for artifacts
+    def set_summary(self, **values: Any) -> None:
+        """
+        Update summary metrics for the experiment.
+        
+        Args:
+            **values: Summary metrics to set as key-value pairs
+        """
+        if not values:
+            return
+        LOGGER.debug("Updating summary metrics: %s", values)
+        if self._wandb_run is not None:
+            summary = getattr(self._wandb_run, "summary", None)
+            if summary is not None:
+                try:
+                    for key, value in values.items():
+                        summary[key] = value
+                except Exception as exc:  # pragma: no cover
+                    LOGGER.warning("Failed to update W&B summary: %s", exc)
 
-    def close(self):
-        """Close all backends and release resources."""
-        # Close W&B
-        if self._wandb_run:
+        if self._tb_writer is not None:
+            try:
+                self._tb_writer.add_text("summary", json.dumps(values, indent=2))
+            except Exception as exc:  # pragma: no cover
+                LOGGER.warning("Failed to write TensorBoard summary: %s", exc)
+
+    def finish(self) -> None:
+        """Finish the experiment run, cleaning up resources."""
+        if self._closed:
+            return
+        self._closed = True
+        if self._tb_writer is not None:
+            try:
+                self._tb_writer.flush()
+                self._tb_writer.close()
+            except Exception as exc:  # pragma: no cover
+                LOGGER.warning("Failed to close TensorBoard writer: %s", exc)
+            self._tb_writer = None
+        if self._wandb_run is not None:
             try:
                 self._wandb_run.finish()
-                logger.info("W&B run finished")
-            except Exception as e:
-                logger.warning(f"Failed to finish W&B run: {e}")
+            except Exception as exc:  # pragma: no cover
+                LOGGER.warning("Failed to close W&B run: %s", exc)
+            self._wandb_run = None
+        LOGGER.debug("Experiment logger finished")
+
+    def _start_wandb_run(self) -> None:
+        """Initialize the W&B run."""
+        project = self._cfg.wandb_project or os.getenv("WANDB_PROJECT")
+        if not project:
+            LOGGER.warning("W&B enabled but no project provided; disabling W&B logging")
+            return
+
+        try:
+            import wandb  # type: ignore
+        except Exception as exc:  # pragma: no cover
+            LOGGER.warning("W&B library unavailable: %s", exc)
+            return
+
+        entity = self._cfg.wandb_entity or os.getenv("WANDB_ENTITY")
+        run_name = self._cfg.wandb_run_name or self._cfg.wandb_name or self._run_name
+        tags = list(dict.fromkeys(self._cfg.wandb_tags))
+        if self._git_sha:
+            tags.append(self._git_sha)
+        tags = [tag for tag in tags if tag]
+
+        os.environ.setdefault("WANDB_PROJECT", project)
+        if entity:
+            os.environ.setdefault("WANDB_ENTITY", entity)
+        if run_name:
+            os.environ.setdefault("WANDB_RUN_NAME", run_name)
+        if tags:
+            os.environ["WANDB_TAGS"] = ",".join(tags)
+
+        settings = {"start_method": "thread"}
+        wandb_mode = os.getenv("WANDB_MODE")
+        if wandb_mode:
+            LOGGER.info("W&B mode=%s", wandb_mode)
+
+        try:
+            self._wandb_run = wandb.init(
+                project=project,
+                entity=entity,
+                name=run_name,
+                tags=tags or None,
+                group=self._cfg.wandb_group,
+                job_type=self._cfg.wandb_job_type,
+                notes=self._cfg.wandb_notes,
+                config=dict(self._config_snapshot),
+                reinit=True,
+                settings=settings,
+            )
+            LOGGER.info("Initialized W&B run %s", self._wandb_run.name if self._wandb_run else run_name)
+            if self._git_sha and self._wandb_run is not None:
+                self._wandb_run.config.update({"git_sha": self._git_sha}, allow_val_change=True)
+        except Exception as exc:  # pragma: no cover
+            LOGGER.warning("Failed to initialise W&B run: %s", exc)
             self._wandb_run = None
 
-        # Close TensorBoard
-        if self._tb_writer:
-            try:
-                self._tb_writer.close()
-                logger.info("TensorBoard writer closed")
-            except Exception as e:
-                logger.warning(f"Failed to close TensorBoard writer: {e}")
+    def _start_tensorboard_writer(self) -> None:
+        """Initialize the TensorBoard writer."""
+        try:
+            from torch.utils.tensorboard import SummaryWriter
+        except Exception as exc:  # pragma: no cover
+            LOGGER.warning("TensorBoard SummaryWriter unavailable: %s", exc)
+            return
+
+        log_dir = Path(self._cfg.tb_log_dir)
+        log_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            self._tb_writer = SummaryWriter(log_dir=str(log_dir))
+            LOGGER.info("TensorBoard writer initialised at %s", log_dir)
+        except Exception as exc:  # pragma: no cover
+            LOGGER.warning("Failed to create TensorBoard writer: %s", exc)
             self._tb_writer = None
+
+    def _derive_run_name(self) -> str:
+        """Derive a run name from the configuration snapshot."""
+        # Handle model name which could be a string or a dict
+        if isinstance(self._config_snapshot.get("model"), dict):
+            model_name = self._config_snapshot["model"].get("type", "model")
+        elif isinstance(self._config_snapshot.get("model"), str):
+            model_name = self._config_snapshot["model"]
+        else:
+            model_name = self._config_snapshot.get("model_name", "model")
+        
+        # Handle dataset name which could be in different formats
+        if isinstance(self._config_snapshot.get("data"), dict):
+            dataset_name = self._config_snapshot["data"].get("train_file", "dataset")
+        else:
+            dataset_name = self._config_snapshot.get("dataset", "dataset")
+        
+        # Generate timestamp and create safe names
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+        safe_model = str(model_name).split("/")[-1]
+        safe_dataset = Path(str(dataset_name)).stem or "dataset"
+        
+        return f"{safe_model}-{safe_dataset}-{timestamp}"
+
+    @staticmethod
+    def _detect_git_sha() -> Optional[str]:
+        """Detect the git SHA of the current repository."""
+        try:
+            import subprocess
+
+            sha = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL)
+            return sha.decode().strip()
+        except Exception:  # pragma: no cover
+            return None
+
+    @staticmethod
+    def _is_number(value: Any) -> bool:
+        """Check if a value is a number that can be converted to float."""
+        try:
+            float(value)
+            return True
+        except (TypeError, ValueError):
+            return False

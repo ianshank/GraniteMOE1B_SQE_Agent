@@ -1,0 +1,10 @@
+2025-09-29 12:25:25,326 INFO    MainThread:19520 [wandb_init.py:setup_run_log_directory():686] Logging user logs to /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/run-20250929_122525-1m46vhqc/logs/debug.log
+2025-09-29 12:25:25,326 INFO    MainThread:19520 [wandb_init.py:setup_run_log_directory():687] Logging internal logs to /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/run-20250929_122525-1m46vhqc/logs/debug-internal.log
+2025-09-29 12:25:25,327 INFO    MainThread:19520 [wandb_init.py:init():813] calling init triggers
+2025-09-29 12:25:25,327 INFO    MainThread:19520 [wandb_init.py:init():818] wandb.init called with sweep_config: {}
+config: {'model': 'mock_model', 'layers': 2, 'hidden_size': 128, 'dropout': 0.1, '_wandb': {}}
+2025-09-29 12:25:25,327 INFO    MainThread:19520 [wandb_init.py:init():861] starting backend
+2025-09-29 12:25:25,327 INFO    MainThread:19520 [wandb_init.py:init():864] sending inform_init request
+2025-09-29 12:25:25,327 INFO    MainThread:19520 [wandb_init.py:init():872] backend started and connected
+2025-09-29 12:25:25,330 INFO    MainThread:19520 [wandb_init.py:init():942] updated telemetry
+2025-09-29 12:25:25,355 INFO    MainThread:19520 [wandb_init.py:init():966] communicating run to backend with 90.0 second timeout

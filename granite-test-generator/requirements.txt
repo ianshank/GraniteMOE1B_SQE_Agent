@@ -192,3 +192,7 @@ zstandard==0.25.0
 pytest==8.4.2
 pytest-asyncio==1.2.0
 pytest-cov==7.0.0
+tensorboard>=2.16
+wandb>=0.17
+evaluate>=0.4.2
+torchmetrics>=1.4

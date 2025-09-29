@@ -1,0 +1,15 @@
+2025-09-29 12:25:23,609 INFO    MainThread:19520 [wandb_setup.py:_flush():81] Current SDK version is 0.22.0
+2025-09-29 12:25:23,609 INFO    MainThread:19520 [wandb_setup.py:_flush():81] Configure stats pid to 19520
+2025-09-29 12:25:23,609 INFO    MainThread:19520 [wandb_setup.py:_flush():81] Loading settings from /Users/iancruickshank/.config/wandb/settings
+2025-09-29 12:25:23,609 INFO    MainThread:19520 [wandb_setup.py:_flush():81] Loading settings from /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/settings
+2025-09-29 12:25:23,609 INFO    MainThread:19520 [wandb_setup.py:_flush():81] Loading settings from environment variables
+2025-09-29 12:25:23,609 INFO    MainThread:19520 [wandb_init.py:setup_run_log_directory():686] Logging user logs to /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/run-20250929_122523-omn9r3m0/logs/debug.log
+2025-09-29 12:25:23,609 INFO    MainThread:19520 [wandb_init.py:setup_run_log_directory():687] Logging internal logs to /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/run-20250929_122523-omn9r3m0/logs/debug-internal.log
+2025-09-29 12:25:23,609 INFO    MainThread:19520 [wandb_init.py:init():813] calling init triggers
+2025-09-29 12:25:23,610 INFO    MainThread:19520 [wandb_init.py:init():818] wandb.init called with sweep_config: {}
+config: {'test': 'integration', '_wandb': {}}
+2025-09-29 12:25:23,610 INFO    MainThread:19520 [wandb_init.py:init():861] starting backend
+2025-09-29 12:25:24,252 INFO    MainThread:19520 [wandb_init.py:init():864] sending inform_init request
+2025-09-29 12:25:24,297 INFO    MainThread:19520 [wandb_init.py:init():872] backend started and connected
+2025-09-29 12:25:24,300 INFO    MainThread:19520 [wandb_init.py:init():942] updated telemetry
+2025-09-29 12:25:24,322 INFO    MainThread:19520 [wandb_init.py:init():966] communicating run to backend with 90.0 second timeout

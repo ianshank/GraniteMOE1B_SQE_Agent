@@ -1,0 +1,16 @@
+{"time":"2025-09-29T12:25:24.776299-04:00","level":"INFO","msg":"stream: starting","core version":"0.22.0"}
+{"time":"2025-09-29T12:25:24.855545-04:00","level":"INFO","msg":"stream: created new stream","id":"guef9jji"}
+{"time":"2025-09-29T12:25:24.855574-04:00","level":"INFO","msg":"stream: started","id":"guef9jji"}
+{"time":"2025-09-29T12:25:24.85558-04:00","level":"INFO","msg":"handler: started","stream_id":"guef9jji"}
+{"time":"2025-09-29T12:25:24.855582-04:00","level":"INFO","msg":"sender: started","stream_id":"guef9jji"}
+{"time":"2025-09-29T12:25:24.855589-04:00","level":"INFO","msg":"writer: started","stream_id":"guef9jji"}
+{"time":"2025-09-29T12:25:24.902969-04:00","level":"ERROR","msg":"HTTP error","status":404,"method":"POST","url":"https://api.wandb.ai/graphql"}
+{"time":"2025-09-29T12:25:24.903044-04:00","level":"ERROR","msg":"runupserter: failed to init run","error":"returned error 404: {\"data\":{\"upsertBucket\":null},\"errors\":[{\"message\":\"entity cli-entity not found during upsertBucket\",\"path\":[\"upsertBucket\"]}]}"}
+{"time":"2025-09-29T12:25:33.178691-04:00","level":"INFO","msg":"stream: closing","id":"guef9jji"}
+{"time":"2025-09-29T12:25:33.179608-04:00","level":"ERROR","msg":"sender: uploadConfigFile: stream: no run"}
+{"time":"2025-09-29T12:25:33.276287-04:00","level":"ERROR","msg":"HTTP error","status":404,"method":"POST","url":"https://api.wandb.ai/graphql"}
+{"time":"2025-09-29T12:25:33.277363-04:00","level":"ERROR","msg":"runfiles: CreateRunFiles returned error: returned error 404: {\"data\":{\"createRunFiles\":null},\"errors\":[{\"message\":\"entity cli-entity not found during createRunFiles\",\"path\":[\"createRunFiles\"]}]}"}
+{"time":"2025-09-29T12:25:33.277378-04:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-09-29T12:25:33.277389-04:00","level":"INFO","msg":"handler: closed","stream_id":"guef9jji"}
+{"time":"2025-09-29T12:25:33.287098-04:00","level":"INFO","msg":"sender: closed","stream_id":"guef9jji"}
+{"time":"2025-09-29T12:25:33.287114-04:00","level":"INFO","msg":"stream: closed","id":"guef9jji"}

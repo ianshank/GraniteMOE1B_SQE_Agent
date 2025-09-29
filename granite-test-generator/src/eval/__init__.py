@@ -1,4 +1,4 @@
-"""Evaluation utilities for ML models."""
+"""Evaluation metrics and helpers for the Granite SQE agent."""
 
 from .metrics import (
     compute_classification_metrics,
