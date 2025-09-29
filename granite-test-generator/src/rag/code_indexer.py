@@ -14,7 +14,43 @@ import re
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+try:
+    # Preferred split package (when available)
+    from langchain_text_splitters import RecursiveCharacterTextSplitter  # type: ignore
+except Exception:  # pragma: no cover
+    try:
+        # Legacy path in LangChain core
+        from langchain.text_splitter import RecursiveCharacterTextSplitter  # type: ignore
+    except Exception:  # pragma: no cover
+        # Lightweight fallback splitter with similar interface
+        class RecursiveCharacterTextSplitter:  # type: ignore
+            def __init__(self, chunk_size: int = 1000, chunk_overlap: int = 200, separators: Optional[List[str]] = None) -> None:
+                self.chunk_size = int(chunk_size)
+                self.chunk_overlap = int(chunk_overlap)
+                self.separators = separators or ["\n\n", "\n", " "]
+
+            def split_text(self, text: str) -> List[str]:
+                if not text:
+                    return []
+                # If separators available, first try to split on largest then merge windows
+                chunks: List[str] = [text]
+                for sep in self.separators:
+                    next_chunks: List[str] = []
+                    for c in chunks:
+                        next_chunks.extend(c.split(sep))
+                    chunks = [c for c in next_chunks if c]
+                    if len(chunks) > 1:
+                        break
+                # Sliding window packing to approximate target sizes
+                packed: List[str] = []
+                i = 0
+                while i < len(text):
+                    end = min(len(text), i + self.chunk_size)
+                    packed.append(text[i:end])
+                    if end == len(text):
+                        break
+                    i = max(i + self.chunk_size - self.chunk_overlap, i + 1)
+                return packed
 
 from src.rag.models import CodeLanguage, CodePattern
 
@@ -61,7 +97,12 @@ class CodebaseIndexer:
             ".css": CodeLanguage.css,
         }
 
-    def index_paths(self, roots: Iterable[str], exclude_globs: Iterable[str] | None = None) -> Dict[str, Any]:
+    def index_paths(
+        self,
+        roots: Iterable[str],
+        exclude_globs: Iterable[str] | None = None,
+        base_metadata: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """Index code across provided roots.
 
         Args:
@@ -105,6 +146,12 @@ class CodebaseIndexer:
                 chunks = self.splitter.split_text(content)
                 for idx, chunk in enumerate(chunks):
                     meta = self._build_metadata(content, chunk, lang, str(fp), idx)
+                    if base_metadata:
+                        # Merge and allow language override if provided
+                        merged = {**meta, **base_metadata}
+                        if 'language' in base_metadata and base_metadata['language']:
+                            merged['language'] = str(base_metadata['language'])
+                        meta = merged
                     doc = self._make_doc(chunk, meta)
                     payload.append((doc, meta))
                 stats["snippets"] += len(chunks)

@@ -469,8 +469,23 @@ class GraniteTestCaseGenerator:
             if 'code_indexer' in self.components and bool(str(ci_cfg.get('enabled', 'false')).lower() in {'1','true','yes','on'}):
                 roots = ci_cfg.get('roots') or []
                 exclude_globs = ci_cfg.get('exclude_globs') or []
+                # Team-level overrides
+                teams = self.config.get('teams', []) or []
                 logger.debug("Starting code indexing: roots=%s exclude=%s", roots, exclude_globs)
+                # Global indexing
                 stats = self.components['code_indexer'].index_paths(roots, exclude_globs)
+                # Per-team indexing for specialization (code_roots + language)
+                for team in teams:
+                    team_name = team.get('name')
+                    code_roots = team.get('code_roots') or []
+                    code_lang = team.get('code_language')
+                    if code_roots:
+                        logger.debug("Indexing team-specific roots for %s: %s", team_name, code_roots)
+                        self.components['code_indexer'].index_paths(
+                            code_roots,
+                            exclude_globs,
+                            base_metadata={'team_context': team_name, 'language': code_lang} if team_name else None,
+                        )
                 logger.info("Code indexing stats: files=%d snippets=%d errors=%d", stats.get('files',0), stats.get('snippets',0), stats.get('errors',0))
         except Exception as e:
             logger.debug("Code indexing skipped due to error: %s", e)
@@ -491,6 +506,33 @@ class GraniteTestCaseGenerator:
         
         print("Fine-tuning skipped: no synthetic test generation allowed.")
         return None
+
+    def get_metrics(self) -> Dict[str, Any]:
+        """Expose basic telemetry including agent-level metrics when available."""
+        metrics: Dict[str, Any] = {}
+        try:
+            agent = self.components.get('test_agent')
+            if agent and hasattr(agent, '_metrics'):
+                metrics['agent'] = dict(agent._metrics)  # shallow copy
+        except Exception:
+            metrics['agent'] = {}
+        return metrics
+
+    # ----------------------- Path Resolution Helpers -----------------------
+    def _resolve_output_dir(self, desired: Union[str, Path]) -> Path:
+        """Resolve output directory relative to project root if not absolute.
+
+        Anchors relative paths at the current working directory. This preserves
+        test expectations where the CWD is controlled by the runner and avoids
+        surprising writes outside the intended sandbox. In normal execution,
+        CWD should be the project root.
+        """
+        desired_path = Path(desired)
+        if desired_path.is_absolute():
+            return desired_path
+        resolved = (Path.cwd() / desired_path).resolve()
+        logger.debug("Resolved output directory '%s' -> '%s' (cwd)", desired, resolved)
+        return resolved
     
     def register_teams(self):
         """Register team connectors based on configuration.
@@ -594,7 +636,7 @@ class GraniteTestCaseGenerator:
 
         # Get output directory from config or use default
         output_dir_path = self.config.get('paths', {}).get('output_dir', DEFAULT_OUTPUT_DIR)
-        output_dir = Path(output_dir_path)
+        output_dir = self._resolve_output_dir(output_dir_path)
         output_dir.mkdir(parents=True, exist_ok=True)
         logger.debug("Writing generated results to %s", output_dir.absolute())
 

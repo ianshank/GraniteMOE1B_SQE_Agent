@@ -64,6 +64,9 @@ teams:
       token: "${GITHUB_TOKEN}"              # From environment
     rag_enabled: true
     cag_enabled: true
+    # Optional team specialization
+    code_language: ${TEAM_CODE_LANG:python}
+    code_roots: [${TEAM_CODE_ROOT_1:./}, ${TEAM_CODE_ROOT_2:}]
 ```
 
 #### 3. Environment Variable Formats
@@ -89,6 +92,13 @@ The system supports these formats in YAML files:
 | `GITHUB_ORG` | GitHub organization | `your-org` |
 | `JIRA_BASE_URL` | Jira instance URL | `https://company.atlassian.net` |
 | `DEFAULT_LOG_LEVEL` | Logging level | `INFO` |
+| `CODE_RAG_ENABLED` | Enable code indexing and prompt enhancement | `false` |
+| `CODE_RAG_CHUNK_SIZE` | Code chunk size | `1000` |
+| `CODE_RAG_CHUNK_OVERLAP` | Code chunk overlap | `200` |
+| `CODE_RAG_MAX_RESULTS` | Max code snippets per retrieval | `10` |
+| `CODE_RAG_W_SIM` | Rank weight: similarity | `0.4` |
+| `CODE_RAG_W_QUAL` | Rank weight: quality | `0.3` |
+| `CODE_RAG_W_REUSE` | Rank weight: reusability | `0.3` |
 
 ### System Configuration
 

@@ -24,6 +24,7 @@ except Exception:  # pragma: no cover - import-time fallback for test envs
     def initialize_agent(*args, **kwargs):  # type: ignore
         return None
 from typing import List, Dict, Any, Optional
+import time
 import asyncio
 from typing import TYPE_CHECKING
 try:  # optional dependency; provide stub for import resilience
@@ -77,6 +78,14 @@ class TestGenerationAgent:
         self.settings = settings or {}
         self.tools = self._initialize_tools()
         self._logger = logging.getLogger(__name__)
+        # Telemetry counters (lightweight; no external deps)
+        self._metrics: Dict[str, Any] = {
+            'rag_searches': 0,
+            'patterns_found_total': 0,
+            'avg_confidence': 0.0,
+            'last_search_time_ms': 0.0,
+            'cache_hits': 0,
+        }
         
     def _initialize_tools(self) -> List[Tool]:
         """Initialize tools for the agent"""
@@ -250,23 +259,19 @@ Generate one test case using the exact format above.
                             lang_hint = 'typescript'
                         elif any(t in ql for t in ("javascript","node","express")):
                             lang_hint = 'javascript'
-                        try:
-                            snippets = self.rag_retriever.retrieve_code_snippets(
-                                query=query,
-                                team_context=team_name,
-                                language_filter=lang_hint,
-                                k=k,
-                                rank_weights=weights if isinstance(weights, dict) else None,
-                            )
-                        except Exception as e:  # pragma: no cover - defensive
-                            self._logger.debug(f"Code snippet retrieval failed; continuing without snippets: {e}")
-                            snippets = []
+
+                        snippets = self._get_code_snippets_with_cache(
+                            team_name=team_name,
+                            requirement=query,
+                            language_hint=lang_hint,
+                            k=k,
+                            weights=weights if isinstance(weights, dict) else None,
+                        )
 
                         if snippets:
                             try:
                                 from src.agents.prompt.enhanced_prompt_builder import build_test_generation_prompt
                                 from src.rag.models import CodeLanguage
-                                # Use first snippet language as target fence if present
                                 target_lang = snippets[0].language if snippets[0].language else CodeLanguage.python
                                 enriched = build_test_generation_prompt(
                                     requirement=full_requirement,
@@ -474,3 +479,68 @@ Generate one test case using the exact format above.
 [/TEST_CASE]"""
         )
         return fallback
+
+    # ----------------------- Phase 4: Cache + Telemetry -----------------------
+    def _snippet_cache_key(self, *, requirement: str, language: str, team: str) -> str:
+        """Stable cache key for snippet retrieval settings.
+
+        Includes requirement text, inferred language, and team to keep
+        snippet context deterministic across runs.
+        """
+        import hashlib, json
+        payload = {
+            'requirement': requirement,
+            'language': language,
+            'team': team,
+        }
+        return hashlib.sha256(json.dumps(payload, sort_keys=True).encode('utf-8')).hexdigest()
+
+    def _get_code_snippets_with_cache(
+        self,
+        *,
+        team_name: str,
+        requirement: str,
+        language_hint: str,
+        k: int,
+        weights: Optional[Dict[str, float]],
+    ) -> List[Any]:
+        """Retrieve ranked code snippets using KVCache for warm hits and telemetry."""
+        # Build cache key and attempt hit
+        key = self._snippet_cache_key(requirement=requirement, language=language_hint, team=team_name)
+        cached = self.cag_cache.kv_cache.retrieve(content=key, context={'type': 'snippet_retrieval'})
+        if cached and isinstance(cached.get('response'), list):
+            self._metrics['cache_hits'] += 1
+            self._logger.debug("Snippet cache hit for team=%s lang=%s", team_name, language_hint)
+            # Return previously stored snippets
+            return cached.get('response')
+
+        # Miss: perform retrieval and timing
+        start = time.perf_counter()
+        try:
+            snippets = self.rag_retriever.retrieve_code_snippets(
+                query=requirement,
+                team_context=team_name,
+                language_filter=language_hint,
+                k=k,
+                rank_weights=weights,
+            )
+        except Exception as e:  # pragma: no cover - defensive
+            self._logger.debug("Snippet retrieval error: %s", e)
+            snippets = []
+        elapsed_ms = (time.perf_counter() - start) * 1000.0
+        self._metrics['last_search_time_ms'] = elapsed_ms
+        self._metrics['rag_searches'] += 1
+        self._metrics['patterns_found_total'] += len(snippets)
+        self._logger.debug("Snippet retrieval time: %.2f ms (results=%d)", elapsed_ms, len(snippets))
+
+        # Store in KVCache for subsequent runs
+        try:
+            self.cag_cache.kv_cache.store(
+                content=key,
+                context={'type': 'snippet_retrieval'},
+                response=snippets,
+                tags=[team_name, 'snippets', language_hint],
+            )
+        except Exception:  # pragma: no cover
+            pass
+        return snippets
