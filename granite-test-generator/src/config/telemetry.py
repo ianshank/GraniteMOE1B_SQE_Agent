@@ -1,0 +1,143 @@
+"""Telemetry configuration models and helpers."""
+
+from __future__ import annotations
+
+import logging
+import os
+from typing import Any, Iterable, List, Mapping, MutableMapping, Optional
+
+from pydantic import BaseModel, Field, validator
+
+LOGGER = logging.getLogger(__name__)
+
+_BOOL_TRUTHY = {"1", "true", "t", "yes", "y", "on"}
+_BOOL_FALSY = {"0", "false", "f", "no", "n", "off"}
+
+
+def _normalize_bool(value: Optional[Any]) -> Optional[bool]:
+    """Convert supported truthy/falsy representations into booleans."""
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in _BOOL_TRUTHY:
+            return True
+        if lowered in _BOOL_FALSY:
+            return False
+        LOGGER.debug("Unable to coerce boolean from string '%s'", value)
+        return None
+    LOGGER.debug("Unable to coerce boolean from type %s", type(value).__name__)
+    return None
+
+
+def _split_tags(raw_tags: Optional[Any]) -> List[str]:
+    """Return a list of telemetry tags."""
+    if raw_tags is None:
+        return []
+    if isinstance(raw_tags, str):
+        return [tag.strip() for tag in raw_tags.split(",") if tag.strip()]
+    if isinstance(raw_tags, Iterable):
+        tags: List[str] = []
+        for item in raw_tags:
+            if not item:
+                continue
+            tags.extend(_split_tags(str(item)))
+        return tags
+    return []
+
+
+class TelemetryConfig(BaseModel):
+    """Declarative telemetry configuration for experiment tracking."""
+
+    enable_wandb: bool = Field(default=False)
+    wandb_project: Optional[str] = Field(default=None)
+    wandb_entity: Optional[str] = Field(default=None)
+    wandb_run_name: Optional[str] = Field(default=None)
+    wandb_tags: List[str] = Field(default_factory=list)
+    enable_tensorboard: bool = Field(default=False)
+    tb_log_dir: str = Field(default="runs/")
+    log_interval_steps: int = Field(default=50, ge=1)
+
+    @validator("tb_log_dir")
+    def _validate_tb_log_dir(cls, value: str) -> str:
+        if not value:
+            raise ValueError("TensorBoard log directory must not be empty")
+        return value
+
+    @validator("wandb_tags", pre=True)
+    def _ensure_tags_list(cls, value: Any) -> List[str]:
+        return _split_tags(value)
+
+    def merged_with(self, **overrides: Any) -> "TelemetryConfig":
+        data = self.dict()
+        data.update({k: v for k, v in overrides.items() if v is not None})
+        return TelemetryConfig(**data)
+
+
+def load_telemetry_from_sources(
+    cli_args: Optional[Mapping[str, Any]] = None,
+    env: Optional[Mapping[str, str]] = None,
+) -> TelemetryConfig:
+    """Materialise ``TelemetryConfig`` from CLI arguments and environment variables."""
+    env = dict(env or os.environ)
+
+    env_enable_wandb = _normalize_bool(env.get("ENABLE_WANDB"))
+    env_enable_tb = _normalize_bool(env.get("ENABLE_TENSORBOARD"))
+
+    env_tags = env.get("WANDB_TAGS")
+
+    base_cfg = TelemetryConfig(
+        enable_wandb=env_enable_wandb or False,
+        wandb_project=env.get("WANDB_PROJECT"),
+        wandb_entity=env.get("WANDB_ENTITY"),
+        wandb_run_name=env.get("WANDB_RUN_NAME"),
+        wandb_tags=_split_tags(env_tags),
+        enable_tensorboard=env_enable_tb or False,
+        tb_log_dir=env.get("TB_LOG_DIR", "runs/"),
+        log_interval_steps=int(env.get("LOG_INTERVAL_STEPS", 50)),
+    )
+
+    if not cli_args:
+        return base_cfg
+
+    def _get(mapping: Mapping[str, Any], key: str) -> Any:
+        if hasattr(mapping, key):
+            return getattr(mapping, key)
+        return mapping.get(key)
+
+    cli_enable_wandb = _normalize_bool(_get(cli_args, "enable_wandb"))
+    cli_enable_tb = _normalize_bool(_get(cli_args, "enable_tensorboard"))
+
+    overrides: MutableMapping[str, Any] = {}
+    if cli_enable_wandb is not None:
+        overrides["enable_wandb"] = cli_enable_wandb
+    if cli_enable_tb is not None:
+        overrides["enable_tensorboard"] = cli_enable_tb
+
+    for key in (
+        "wandb_project",
+        "wandb_entity",
+        "wandb_run_name",
+        "wandb_tags",
+        "tb_log_dir",
+        "log_interval_steps",
+    ):
+        value = _get(cli_args, key)
+        if value is not None:
+            overrides[key] = value
+
+    if "wandb_tags" in overrides:
+        overrides["wandb_tags"] = _split_tags(overrides["wandb_tags"])
+
+    if "log_interval_steps" in overrides:
+        try:
+            overrides["log_interval_steps"] = int(overrides["log_interval_steps"])
+        except (TypeError, ValueError):
+            LOGGER.warning("Invalid log interval override %s", overrides["log_interval_steps"])
+            overrides.pop("log_interval_steps", None)
+
+    return base_cfg.merged_with(**overrides)

@@ -64,9 +64,12 @@ except Exception:  # pragma: no cover
     DataCollatorForLanguageModeling = _MissingDataCollatorForLanguageModeling  # type: ignore
     Dataset = _MissingDataset  # type: ignore
 import torch
-from typing import List, Dict, Any, TYPE_CHECKING
+from typing import List, Dict, Any, TYPE_CHECKING, Optional
+import os
 import json
 import logging
+
+logger = logging.getLogger(__name__)
 # Optional MLX for Apple-silicon; fall back to template gen if missing
 try:
     import mlx.core as mx  # type: ignore
@@ -83,6 +86,7 @@ except Exception:  # pragma: no cover
 
 if TYPE_CHECKING:
     from src.models.test_case_schemas import TestCase, TestStep
+    from src.config.telemetry import TelemetryConfig
 
 class GraniteMoETrainer:
     def __init__(self, model_name: str = "ibm-granite/granite-3.0-1b-a400m-instruct"):
@@ -182,8 +186,15 @@ Create a test case for the above requirements.
 
         return prompt
     
-    def fine_tune(self, dataset: Dataset, output_dir: str = "./fine_tuned_granite",
-                  num_epochs: int = 3, batch_size: int = 4):
+    def fine_tune(
+        self,
+        dataset: Dataset,
+        output_dir: str = "./fine_tuned_granite",
+        num_epochs: int = 3,
+        batch_size: int = 4,
+        telemetry: Optional["TelemetryConfig"] = None,
+        log_checkpoints: bool = False,
+    ):
         """Fine-tune the model with QLoRA for memory efficiency"""
         from peft import LoraConfig, get_peft_model, TaskType
         
@@ -203,6 +214,21 @@ Create a test case for the above requirements.
             
         self.model = get_peft_model(self.model, lora_config)
         
+        report_to: List[str] = []
+        logging_dir = None
+        logging_steps = 10
+        if telemetry is not None:
+            logging_steps = telemetry.log_interval_steps
+            if telemetry.enable_wandb:
+                report_to.append("wandb")
+                if telemetry.wandb_project:
+                    os.environ.setdefault("WANDB_PROJECT", telemetry.wandb_project)
+                if telemetry.wandb_entity:
+                    os.environ.setdefault("WANDB_ENTITY", telemetry.wandb_entity)
+            if telemetry.enable_tensorboard:
+                report_to.append("tensorboard")
+                logging_dir = telemetry.tb_log_dir
+
         # Training arguments optimized for MacMini
         training_args = TrainingArguments(
             output_dir=output_dir,
@@ -210,7 +236,7 @@ Create a test case for the above requirements.
             per_device_train_batch_size=batch_size,
             gradient_accumulation_steps=4,
             warmup_steps=100,
-            logging_steps=10,
+            logging_steps=logging_steps,
             save_steps=500,
             evaluation_strategy="steps",
             eval_steps=500,
@@ -218,7 +244,8 @@ Create a test case for the above requirements.
             fp16=True,  # Mixed precision for memory efficiency
             dataloader_num_workers=0,  # Disable multiprocessing on Mac
             remove_unused_columns=False,
-            report_to=None  # Disable wandb for simplicity
+            report_to=report_to or None,
+            logging_dir=logging_dir
         )
         
         # Data collator
@@ -240,7 +267,10 @@ Create a test case for the above requirements.
         # Start training
         trainer.train()
         trainer.save_model()
-        
+
+        if not log_checkpoints:
+            logger.info("Checkpoint logging disabled; model saved locally but not uploaded to telemetry stores.")
+
         return trainer
 
     def prepare_offline_fine_tuning(self, dataset: Dataset, output_dir: str = "./fine_tuned_granite") -> tuple[str, str]:
