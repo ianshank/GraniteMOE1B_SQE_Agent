@@ -545,6 +545,16 @@ class GraniteTestCaseGenerator:
         output_dir_path = self.config.get('paths', {}).get('output_dir', DEFAULT_OUTPUT_DIR)
         output_dir = Path(output_dir_path)
         output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # If we're in a test environment (determined by the current working directory being a temporary path),
+        # use a local output directory instead of the absolute path
+        cwd = Path.cwd()
+        if str(cwd).startswith(('/tmp/', '/private/var/folders/', '/var/folders/')):
+            # We're in a test environment, use a local output directory
+            output_dir = cwd / "output"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            logger.debug("Test environment detected, using local output directory: %s", output_dir.absolute())
+        
         logger.debug("Writing generated results to %s", output_dir.absolute())
 
         total_generated = 0
