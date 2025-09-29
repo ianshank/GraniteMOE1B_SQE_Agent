@@ -27,7 +27,7 @@ class DummyRun:
         self.config = DummyConfig()
         self.name = "dummy"
 
-    def log(self, payload):
+    def log(self, payload, step=None):
         self.logged.append(payload)
 
     def log_artifact(self, artifact):
