@@ -311,11 +311,12 @@ class GraniteTestCaseGenerator:
         model_name = self.config.get('model_name', DEFAULT_MODEL_NAME)
         self.components['granite_trainer'] = GraniteMoETrainer(model_name)
         
-        # Initialize agent
+        # Initialize agent (pass settings for config-gated features)
         self.components['test_agent'] = TestGenerationAgent(
             self.components['granite_trainer'],
             self.components['rag_retriever'],
-            self.components['cag_cache']
+            self.components['cag_cache'],
+            settings=self.config,
         )
         
         # Initialize workflow orchestrator

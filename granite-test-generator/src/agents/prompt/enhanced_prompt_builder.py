@@ -57,14 +57,16 @@ def build_test_generation_prompt(
         parts.append("\nRELEVANT CODE PATTERNS:")
         for i, s in enumerate(list(code_snippets)[:5]):
             parts.append(f"\nExample {i+1} - {s.description}")
+            pattern_value = getattr(s.pattern_type, "value", str(s.pattern_type))
             parts.append(
-                f"Pattern: {s.pattern_type.value} | Quality: {s.quality_score:.2f}"
+                f"Pattern: {pattern_value} | Quality: {s.quality_score:.2f}"
             )
             file_loc = (
                 f"{s.file_path}:{s.line_start}-{s.line_end}" if s.file_path else "Unknown"
             )
             parts.append(f"File: {file_loc}")
-            parts.append(f"```{s.language.value}")
+            lang_value = getattr(s.language, "value", str(s.language))
+            parts.append(f"```{lang_value}")
             parts.append(s.content)
             parts.append("```")
 

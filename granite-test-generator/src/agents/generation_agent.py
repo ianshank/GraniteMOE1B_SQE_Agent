@@ -68,11 +68,13 @@ class TestGenerationAgent:
     def __init__(self, granite_trainer: 'GraniteMoETrainer', 
                  rag_retriever: 'RAGRetriever', 
                  cag_cache: 'CAGCache',
-                 enforce_strict_provenance: bool = False):
+                 enforce_strict_provenance: bool = False,
+                 settings: Optional[Dict[str, Any]] = None):
         self.granite_model = granite_trainer
         self.rag_retriever = rag_retriever
         self.cag_cache = cag_cache
         self.enforce_strict_provenance = enforce_strict_provenance
+        self.settings = settings or {}
         self.tools = self._initialize_tools()
         self._logger = logging.getLogger(__name__)
         
@@ -230,7 +232,55 @@ Generate one test case using the exact format above.
                         generated_text = cache_result.split(": ", 1)[1]
                         continue  # Skip generation if cached
                 elif action == "generate_test_case":
+                    # Optionally enrich prompt with code-aware snippets if enabled
                     full_requirement = f"{query}\n\nContext: {context}"
+                    cfg = (self.settings.get('rag', {}) if isinstance(self.settings, dict) else {})
+                    ci_cfg = (cfg.get('code_indexing', {}) if isinstance(cfg, dict) else {})
+                    enabled = str(ci_cfg.get('enabled', 'false')).strip().lower() in {"1","true","yes","on"}
+                    if enabled:
+                        # Pull K and weights from config; fall back to safe defaults
+                        k = int(ci_cfg.get('max_results', 10))
+                        weights = (ci_cfg.get('rank_weights') or {}) if isinstance(ci_cfg, dict) else {}
+                        # Infer language from requirement (basic heuristic). Default python.
+                        lang_hint = 'python'
+                        ql = query.lower()
+                        if any(t in ql for t in ("java","spring")):
+                            lang_hint = 'java'
+                        elif any(t in ql for t in ("typescript","angular")):
+                            lang_hint = 'typescript'
+                        elif any(t in ql for t in ("javascript","node","express")):
+                            lang_hint = 'javascript'
+                        try:
+                            snippets = self.rag_retriever.retrieve_code_snippets(
+                                query=query,
+                                team_context=team_name,
+                                language_filter=lang_hint,
+                                k=k,
+                                rank_weights=weights if isinstance(weights, dict) else None,
+                            )
+                        except Exception as e:  # pragma: no cover - defensive
+                            self._logger.debug(f"Code snippet retrieval failed; continuing without snippets: {e}")
+                            snippets = []
+
+                        if snippets:
+                            try:
+                                from src.agents.prompt.enhanced_prompt_builder import build_test_generation_prompt
+                                from src.rag.models import CodeLanguage
+                                # Use first snippet language as target fence if present
+                                target_lang = snippets[0].language if snippets[0].language else CodeLanguage.python
+                                enriched = build_test_generation_prompt(
+                                    requirement=full_requirement,
+                                    language=target_lang,
+                                    code_snippets=snippets,
+                                )
+                                full_requirement = enriched
+                                self._logger.debug(
+                                    "Enhanced prompt built with %d code snippets (lang=%s)",
+                                    len(snippets), getattr(target_lang, 'value', str(target_lang))
+                                )
+                            except Exception as e:
+                                self._logger.debug(f"Prompt enhancement failed; using base requirement. Error: {e}")
+
                     generated_text = self._generate_test_case(full_requirement)
                     # Provenance verification
                     try:

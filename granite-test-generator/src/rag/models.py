@@ -96,6 +96,7 @@ class CodeSnippet(BaseModel):
         return float(v)
 
     class Config:
-        use_enum_values = True
+        # Keep Enums as Enum instances to support .value in downstream consumers
+        use_enum_values = False
 
 
