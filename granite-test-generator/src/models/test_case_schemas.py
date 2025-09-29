@@ -1,13 +1,37 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
+from __future__ import annotations
+
+import logging
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+try:
+    from pydantic import BaseModel, Field
+except Exception:  # pragma: no cover - executed when pydantic missing in test env
+    logging.getLogger(__name__).warning(
+        "pydantic not available; using lightweight compatibility shims for schemas"
+    )
+
+    class BaseModel:  # type: ignore
+        """Minimal stand-in replicating the constructor/serialization behaviour."""
+
+        def __init__(self, **kwargs: Any) -> None:
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+
+        def model_dump(self) -> Dict[str, Any]:
+            return self.__dict__.copy()
+
+    def Field(*_args: Any, **_kwargs: Any) -> Any:  # type: ignore
+        return None
 
 class TestCasePriority(str, Enum):
+    __test__ = False
     HIGH = "high"
     MEDIUM = "medium" 
     LOW = "low"
 
 class TestCaseType(str, Enum):
+    __test__ = False
     FUNCTIONAL = "functional"
     INTEGRATION = "integration"
     UNIT = "unit"
@@ -15,6 +39,7 @@ class TestCaseType(str, Enum):
     PERFORMANCE = "performance"
 
 class TestStep(BaseModel):
+    __test__ = False
     step_number: int = Field(..., description="Sequential step number")
     action: str = Field(..., description="Action to be performed")
     expected_result: str = Field(..., description="Expected outcome")
@@ -29,6 +54,7 @@ class TestCaseProvenance(BaseModel):
     extra: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Additional structured metadata")
 
 class TestCase(BaseModel):
+    __test__ = False
     id: str = Field(..., description="Unique test case identifier")
     summary: str = Field(..., description="Brief test case description")
     priority: TestCasePriority
