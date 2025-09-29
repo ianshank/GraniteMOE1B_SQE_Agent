@@ -185,7 +185,7 @@ Format your response with [TEST_CASE][SUMMARY]...[/SUMMARY][INPUT_DATA]...[/INPU
             # Import torch lazily to avoid hard dependency at module import time
             try:
                 import torch  # type: ignore
-            except Exception:
+            except (ImportError, ModuleNotFoundError):
                 self._logger.warning("torch not available, falling back to template generation")
                 return self._template_generate(requirement)
 
