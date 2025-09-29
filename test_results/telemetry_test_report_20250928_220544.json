@@ -1,0 +1,7 @@
+{
+  "success": false,
+  "duration_seconds": 3.89081072807312,
+  "timestamp": "20250928_220544",
+  "command": "/opt/anaconda3/bin/python -m pytest -v --log-cli-level INFO tests/unit/test_telemetry_config.py tests/unit/test_experiment_logger.py tests/unit/test_metrics.py tests/unit/test_evaluation_helpers.py",
+  "summary": "================== 1 failed, 84 passed, 14 warnings in 2.61s ==================="
+}

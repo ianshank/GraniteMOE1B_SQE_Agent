@@ -1,0 +1,187 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.5, pytest-8.3.2, pluggy-1.5.0 -- /opt/anaconda3/bin/python
+cachedir: .pytest_cache
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /Users/iancruickshank/GraniteMOE1B_SQE_Agent
+configfile: pytest.ini
+plugins: anyio-4.11.0, cov-5.0.0, asyncio-1.1.0, dash-3.2.0, Faker-37.6.0, benchmark-5.1.0, langsmith-0.4.21, mock-3.14.0
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... 
+----------------------------- live log collection ------------------------------
+INFO     numexpr.utils:utils.py:161 NumExpr defaulting to 10 threads.
+INFO     test_metrics:test_metrics.py:33 scikit-learn available for reference metric calculation
+INFO     test_evaluation_helpers:test_evaluation_helpers.py:33 PyTorch available for testing
+collected 85 items
+
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[True-True] PASSED [  1%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[False-False] PASSED [  2%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[1-True0] PASSED [  3%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[0-False0] PASSED [  4%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[true-True] PASSED [  5%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[false-False] PASSED [  7%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[yes-True] PASSED [  8%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[no-False] PASSED [  9%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[1-True1] PASSED [ 10%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[0-False1] PASSED [ 11%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[t-True] PASSED [ 12%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[f-False] PASSED [ 14%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[y-True] PASSED [ 15%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[n-False] PASSED [ 16%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[on-True] PASSED [ 17%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[off-False] PASSED [ 18%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[TRUE-True] PASSED [ 20%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[FALSE-False] PASSED [ 21%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[   yes   -True] PASSED [ 22%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[   no   -False] PASSED [ 23%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[None-None] PASSED [ 24%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[invalid-None] PASSED [ 25%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[value22-None] PASSED [ 27%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[value23-None] PASSED [ 28%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[tag1,tag2,tag3-expected0] PASSED [ 29%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[tag1, tag2, tag3-expected1] PASSED [ 30%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[-expected2] PASSED [ 31%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[None-expected3] PASSED [ 32%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[value4-expected4] PASSED [ 34%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[value5-expected5] PASSED [ 35%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[value6-expected6] PASSED [ 36%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[123-expected7] PASSED [ 37%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[value8-expected8] PASSED [ 38%]
+tests/unit/test_telemetry_config.py::TestTelemetryConfig::test_default_config PASSED [ 40%]
+tests/unit/test_telemetry_config.py::TestTelemetryConfig::test_tb_log_dir_validation PASSED [ 41%]
+tests/unit/test_telemetry_config.py::TestTelemetryConfig::test_tags_normalization PASSED [ 42%]
+tests/unit/test_telemetry_config.py::TestTelemetryConfig::test_merged_with PASSED [ 43%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_load_from_env PASSED [ 44%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_load_from_cli_args PASSED [ 45%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_cli_overrides_env PASSED [ 47%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_invalid_log_interval_steps 
+-------------------------------- live log call ---------------------------------
+WARNING  src.config.telemetry:telemetry.py:157 Invalid log interval override invalid
+FAILED                                                                   [ 48%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_object_with_attributes PASSED [ 49%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_file_system_artifacts 
+-------------------------------- live log call ---------------------------------
+INFO     src.telemetry.experiment:experiment.py:261 TensorBoard writer initialised at /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-131/test_file_system_artifacts0/runs
+PASSED                                                                   [ 50%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_metrics_with_different_types 
+-------------------------------- live log call ---------------------------------
+INFO     src.telemetry.experiment:experiment.py:261 TensorBoard writer initialised at /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-131/test_metrics_with_different_ty0/runs
+PASSED                                                                   [ 51%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_run_name_generation PASSED [ 52%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_git_sha_detection PASSED [ 54%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_number_validation PASSED [ 55%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_artifact_with_nonexistent_path 
+-------------------------------- live log call ---------------------------------
+WARNING  src.telemetry.experiment:experiment.py:140 Artifact path /path/does/not/exist.txt does not exist; skipping upload
+PASSED                                                                   [ 56%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_graceful_multiple_finish PASSED [ 57%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_no_metrics PASSED [ 58%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_experiment_logger_with_real_directory_structure 
+-------------------------------- live log call ---------------------------------
+INFO     src.telemetry.experiment:experiment.py:261 TensorBoard writer initialised at /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-131/test_experiment_logger_with_re0/tb_logs
+PASSED                                                                   [ 60%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_binary_classification PASSED [ 61%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_multiclass_classification PASSED [ 62%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_empty_predictions PASSED [ 63%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_mismatched_lengths PASSED [ 64%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_probabilities_without_sklearn 
+-------------------------------- live log call ---------------------------------
+WARNING  src.eval.metrics:metrics.py:15 scikit-learn not available; using basic metrics
+PASSED                                                                   [ 65%]
+tests/unit/test_metrics.py::TestRegressionMetrics::test_basic_regression PASSED [ 67%]
+tests/unit/test_metrics.py::TestRegressionMetrics::test_perfect_predictions PASSED [ 68%]
+tests/unit/test_metrics.py::TestRegressionMetrics::test_constant_predictions PASSED [ 69%]
+tests/unit/test_metrics.py::TestRegressionMetrics::test_empty_predictions_regression PASSED [ 70%]
+tests/unit/test_metrics.py::TestRegressionMetrics::test_mismatched_lengths_regression PASSED [ 71%]
+tests/unit/test_metrics.py::TestTextGenerationMetrics::test_basic_text_metrics PASSED [ 72%]
+tests/unit/test_metrics.py::TestTextGenerationMetrics::test_multiple_references PASSED [ 74%]
+tests/unit/test_metrics.py::TestTextGenerationMetrics::test_empty_text_predictions PASSED [ 75%]
+tests/unit/test_metrics.py::TestTextGenerationMetrics::test_mismatched_lengths_text PASSED [ 76%]
+tests/unit/test_metrics.py::TestTextGenerationMetrics::test_invalid_references_format PASSED [ 77%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_split_batch_tuple PASSED [ 78%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_split_batch_dict PASSED [ 80%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_split_batch_dict_alternative_keys PASSED [ 81%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_split_batch_error_missing_keys PASSED [ 82%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_split_batch_error_wrong_type PASSED [ 83%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_forward_callable_model PASSED [ 84%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_forward_model_with_eval_step PASSED [ 85%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_forward_error_invalid_model PASSED [ 87%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_flatten_simple_values PASSED [ 88%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_flatten_lists PASSED [ 89%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_flatten_torch_tensor PASSED [ 90%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_flatten_probabilities PASSED [ 91%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_flatten_probabilities_torch PASSED [ 92%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_percentile PASSED [ 94%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_is_number PASSED [ 95%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_evaluate_classification 
+-------------------------------- live log call ---------------------------------
+INFO     src.eval.evaluate:evaluate.py:126 Saved evaluation report to /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-131/test_evaluate_classification0/eval_results/eval_report.json
+PASSED                                                                   [ 96%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_evaluate_regression 
+-------------------------------- live log call ---------------------------------
+INFO     src.eval.evaluate:evaluate.py:126 Saved evaluation report to /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-131/test_evaluate_regression0/regression_results/eval_report.json
+PASSED                                                                   [ 97%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_evaluate_text 
+-------------------------------- live log call ---------------------------------
+INFO     src.eval.evaluate:evaluate.py:126 Saved evaluation report to /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-131/test_evaluate_text0/text_results/eval_report.json
+PASSED                                                                   [ 98%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_evaluate_error_invalid_task 
+-------------------------------- live log call ---------------------------------
+WARNING  src.eval.evaluate:evaluate.py:114 Error computing metrics: Unsupported task type: invalid_task
+INFO     src.eval.evaluate:evaluate.py:126 Saved evaluation report to dummy/eval_report.json
+PASSED                                                                   [100%]
+
+=================================== FAILURES ===================================
+_________ TestLoadTelemetryFromSources.test_invalid_log_interval_steps _________
+
+self = <test_telemetry_config.TestLoadTelemetryFromSources object at 0x112277360>
+
+    def test_invalid_log_interval_steps(self) -> None:
+        """Test handling of invalid log interval steps."""
+        # Test with invalid string
+        cli_args = {"log_interval_steps": "invalid"}
+        config = load_telemetry_from_sources(cli_args=cli_args)
+        assert config.log_interval_steps == 50  # Default value
+    
+        # Test with negative value
+        cli_args = {"log_interval_steps": -10}
+>       config = load_telemetry_from_sources(cli_args=cli_args)
+
+tests/unit/test_telemetry_config.py:232: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/config/telemetry.py:160: in load_telemetry_from_sources
+    return base_cfg.merged_with(**overrides)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TelemetryConfig(enable_wandb=False, wandb_project='telemetry-tests', wandb_entity=None, wandb_run_name=None, wandb_tags=[], enable_tensorboard=False, tb_log_dir='test_runs', log_interval_steps=50)
+overrides = {'log_interval_steps': -10}
+data = {'enable_tensorboard': False, 'enable_wandb': False, 'log_interval_steps': -10, 'tb_log_dir': 'test_runs', ...}
+
+    def merged_with(self, **overrides: Any) -> "TelemetryConfig":
+        data = self.dict()
+        data.update({k: v for k, v in overrides.items() if v is not None})
+>       return TelemetryConfig(**data)
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for TelemetryConfig
+E       log_interval_steps
+E         Input should be greater than or equal to 1 [type=greater_than_equal, input_value=-10, input_type=int]
+E           For further information visit https://errors.pydantic.dev/2.8/v/greater_than_equal
+
+src/config/telemetry.py:95: ValidationError
+------------------------------ Captured log call -------------------------------
+WARNING  src.config.telemetry:telemetry.py:157 Invalid log interval override invalid
+=============================== warnings summary ===============================
+src/config/telemetry.py:82
+  /Users/iancruickshank/GraniteMOE1B_SQE_Agent/src/config/telemetry.py:82: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.8/migration/
+    @validator("tb_log_dir")
+
+src/config/telemetry.py:88
+  /Users/iancruickshank/GraniteMOE1B_SQE_Agent/src/config/telemetry.py:88: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.8/migration/
+    @validator("wandb_tags", pre=True)
+
+tests/unit/test_telemetry_config.py: 12 warnings
+  /opt/anaconda3/lib/python3.13/site-packages/pydantic/main.py:1087: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.8/migration/
+    warnings.warn('The `dict` method is deprecated; use `model_dump` instead.', category=PydanticDeprecatedSince20)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_invalid_log_interval_steps
+================== 1 failed, 84 passed, 14 warnings in 2.61s ===================

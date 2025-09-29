@@ -1,0 +1,7 @@
+{
+  "success": false,
+  "duration_seconds": 5.50785493850708,
+  "timestamp": "20250928_220523",
+  "command": "/opt/anaconda3/bin/python -m pytest -v --log-cli-level INFO tests/unit/test_telemetry_config.py tests/unit/test_experiment_logger.py tests/unit/test_metrics.py tests/unit/test_evaluation_helpers.py tests/integration/test_end_to_end_workflow.py granite-test-generator/tests/integration/test_training_telemetry.py tests/contract/test_wandb_api_contract.py",
+  "summary": "============= 7 failed, 94 passed, 1 skipped, 19 warnings in 4.34s ============="
+}

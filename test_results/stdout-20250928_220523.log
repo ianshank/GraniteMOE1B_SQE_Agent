@@ -1,0 +1,537 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.5, pytest-8.3.2, pluggy-1.5.0 -- /opt/anaconda3/bin/python
+cachedir: .pytest_cache
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /Users/iancruickshank/GraniteMOE1B_SQE_Agent
+configfile: pytest.ini
+plugins: anyio-4.11.0, cov-5.0.0, asyncio-1.1.0, dash-3.2.0, Faker-37.6.0, benchmark-5.1.0, langsmith-0.4.21, mock-3.14.0
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... 
+----------------------------- live log collection ------------------------------
+INFO     numexpr.utils:utils.py:161 NumExpr defaulting to 10 threads.
+INFO     test_metrics:test_metrics.py:33 scikit-learn available for reference metric calculation
+INFO     test_evaluation_helpers:test_evaluation_helpers.py:33 PyTorch available for testing
+INFO     test_end_to_end_workflow:test_end_to_end_workflow.py:37 PyTorch available for end-to-end testing
+INFO     test_wandb_api_contract:test_wandb_api_contract.py:34 W&B module available for contract testing
+collected 102 items
+
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[True-True] PASSED [  0%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[False-False] PASSED [  1%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[1-True0] PASSED [  2%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[0-False0] PASSED [  3%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[true-True] PASSED [  4%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[false-False] PASSED [  5%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[yes-True] PASSED [  6%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[no-False] PASSED [  7%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[1-True1] PASSED [  8%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[0-False1] PASSED [  9%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[t-True] PASSED [ 10%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[f-False] PASSED [ 11%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[y-True] PASSED [ 12%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[n-False] PASSED [ 13%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[on-True] PASSED [ 14%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[off-False] PASSED [ 15%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[TRUE-True] PASSED [ 16%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[FALSE-False] PASSED [ 17%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[   yes   -True] PASSED [ 18%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[   no   -False] PASSED [ 19%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[None-None] PASSED [ 20%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[invalid-None] PASSED [ 21%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[value22-None] PASSED [ 22%]
+tests/unit/test_telemetry_config.py::TestBooleanNormalization::test_normalize_bool[value23-None] PASSED [ 23%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[tag1,tag2,tag3-expected0] PASSED [ 24%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[tag1, tag2, tag3-expected1] PASSED [ 25%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[-expected2] PASSED [ 26%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[None-expected3] PASSED [ 27%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[value4-expected4] PASSED [ 28%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[value5-expected5] PASSED [ 29%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[value6-expected6] PASSED [ 30%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[123-expected7] PASSED [ 31%]
+tests/unit/test_telemetry_config.py::TestTagSplitting::test_split_tags[value8-expected8] PASSED [ 32%]
+tests/unit/test_telemetry_config.py::TestTelemetryConfig::test_default_config PASSED [ 33%]
+tests/unit/test_telemetry_config.py::TestTelemetryConfig::test_tb_log_dir_validation PASSED [ 34%]
+tests/unit/test_telemetry_config.py::TestTelemetryConfig::test_tags_normalization PASSED [ 35%]
+tests/unit/test_telemetry_config.py::TestTelemetryConfig::test_merged_with PASSED [ 36%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_load_from_env PASSED [ 37%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_load_from_cli_args PASSED [ 38%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_cli_overrides_env PASSED [ 39%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_invalid_log_interval_steps 
+-------------------------------- live log call ---------------------------------
+WARNING  src.config.telemetry:telemetry.py:157 Invalid log interval override invalid
+FAILED                                                                   [ 40%]
+tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_object_with_attributes PASSED [ 41%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_file_system_artifacts 
+-------------------------------- live log call ---------------------------------
+INFO     src.telemetry.experiment:experiment.py:261 TensorBoard writer initialised at /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_file_system_artifacts0/runs
+PASSED                                                                   [ 42%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_metrics_with_different_types 
+-------------------------------- live log call ---------------------------------
+INFO     src.telemetry.experiment:experiment.py:261 TensorBoard writer initialised at /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_metrics_with_different_ty0/runs
+PASSED                                                                   [ 43%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_run_name_generation PASSED [ 44%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_git_sha_detection PASSED [ 45%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_number_validation PASSED [ 46%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_artifact_with_nonexistent_path 
+-------------------------------- live log call ---------------------------------
+WARNING  src.telemetry.experiment:experiment.py:140 Artifact path /path/does/not/exist.txt does not exist; skipping upload
+PASSED                                                                   [ 47%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_graceful_multiple_finish PASSED [ 48%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_no_metrics PASSED [ 49%]
+tests/unit/test_experiment_logger.py::TestExperimentLogger::test_experiment_logger_with_real_directory_structure 
+-------------------------------- live log call ---------------------------------
+INFO     src.telemetry.experiment:experiment.py:261 TensorBoard writer initialised at /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_experiment_logger_with_re0/tb_logs
+PASSED                                                                   [ 50%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_binary_classification PASSED [ 50%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_multiclass_classification PASSED [ 51%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_empty_predictions PASSED [ 52%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_mismatched_lengths PASSED [ 53%]
+tests/unit/test_metrics.py::TestClassificationMetrics::test_probabilities_without_sklearn 
+-------------------------------- live log call ---------------------------------
+WARNING  src.eval.metrics:metrics.py:15 scikit-learn not available; using basic metrics
+PASSED                                                                   [ 54%]
+tests/unit/test_metrics.py::TestRegressionMetrics::test_basic_regression PASSED [ 55%]
+tests/unit/test_metrics.py::TestRegressionMetrics::test_perfect_predictions PASSED [ 56%]
+tests/unit/test_metrics.py::TestRegressionMetrics::test_constant_predictions PASSED [ 57%]
+tests/unit/test_metrics.py::TestRegressionMetrics::test_empty_predictions_regression PASSED [ 58%]
+tests/unit/test_metrics.py::TestRegressionMetrics::test_mismatched_lengths_regression PASSED [ 59%]
+tests/unit/test_metrics.py::TestTextGenerationMetrics::test_basic_text_metrics PASSED [ 60%]
+tests/unit/test_metrics.py::TestTextGenerationMetrics::test_multiple_references PASSED [ 61%]
+tests/unit/test_metrics.py::TestTextGenerationMetrics::test_empty_text_predictions PASSED [ 62%]
+tests/unit/test_metrics.py::TestTextGenerationMetrics::test_mismatched_lengths_text PASSED [ 63%]
+tests/unit/test_metrics.py::TestTextGenerationMetrics::test_invalid_references_format PASSED [ 64%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_split_batch_tuple PASSED [ 65%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_split_batch_dict PASSED [ 66%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_split_batch_dict_alternative_keys PASSED [ 67%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_split_batch_error_missing_keys PASSED [ 68%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_split_batch_error_wrong_type PASSED [ 69%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_forward_callable_model PASSED [ 70%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_forward_model_with_eval_step PASSED [ 71%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_forward_error_invalid_model PASSED [ 72%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_flatten_simple_values PASSED [ 73%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_flatten_lists PASSED [ 74%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_flatten_torch_tensor PASSED [ 75%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_flatten_probabilities PASSED [ 76%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_flatten_probabilities_torch PASSED [ 77%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_percentile PASSED [ 78%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_is_number PASSED [ 79%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_evaluate_classification 
+-------------------------------- live log call ---------------------------------
+INFO     src.eval.evaluate:evaluate.py:126 Saved evaluation report to /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_evaluate_classification0/eval_results/eval_report.json
+PASSED                                                                   [ 80%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_evaluate_regression 
+-------------------------------- live log call ---------------------------------
+INFO     src.eval.evaluate:evaluate.py:126 Saved evaluation report to /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_evaluate_regression0/regression_results/eval_report.json
+PASSED                                                                   [ 81%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_evaluate_text 
+-------------------------------- live log call ---------------------------------
+INFO     src.eval.evaluate:evaluate.py:126 Saved evaluation report to /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_evaluate_text0/text_results/eval_report.json
+PASSED                                                                   [ 82%]
+tests/unit/test_evaluation_helpers.py::TestEvaluationHelpers::test_evaluate_error_invalid_task 
+-------------------------------- live log call ---------------------------------
+WARNING  src.eval.evaluate:evaluate.py:114 Error computing metrics: Unsupported task type: invalid_task
+INFO     src.eval.evaluate:evaluate.py:126 Saved evaluation report to dummy/eval_report.json
+PASSED                                                                   [ 83%]
+tests/integration/test_end_to_end_workflow.py::TestEndToEndWorkflow::test_train_eval_log_workflow 
+-------------------------------- live log call ---------------------------------
+INFO     src.telemetry.experiment:experiment.py:261 TensorBoard writer initialised at /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_train_eval_log_workflow0/tensorboard_logs
+FAILED                                                                   [ 84%]
+tests/integration/test_end_to_end_workflow.py::TestTelemetryConfigIntegration::test_config_from_multiple_sources 
+-------------------------------- live log call ---------------------------------
+INFO     src.telemetry.experiment:experiment.py:230 W&B mode=offline
+INFO     src.telemetry.experiment:experiment.py:242 Initialized W&B run model-dataset-20250929-020526
+INFO     src.telemetry.experiment:experiment.py:261 TensorBoard writer initialised at cli-logs
+PASSED                                                                   [ 85%]
+tests/integration/test_end_to_end_workflow.py::TestEvaluationIntegration::test_evaluate_with_filesystem 
+-------------------------------- live log call ---------------------------------
+INFO     src.telemetry.experiment:experiment.py:261 TensorBoard writer initialised at /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_evaluate_with_filesystem0/tb_logs
+INFO     src.eval.evaluate:evaluate.py:126 Saved evaluation report to /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_evaluate_with_filesystem0/eval_test/eval_report.json
+PASSED                                                                   [ 86%]
+tests/integration/test_end_to_end_workflow.py::test_offline_wandb_integration 
+-------------------------------- live log call ---------------------------------
+INFO     src.telemetry.experiment:experiment.py:230 W&B mode=offline
+INFO     src.telemetry.experiment:experiment.py:242 Initialized W&B run model-dataset-20250929-020527
+INFO     src.telemetry.experiment:experiment.py:150 Logged artifact /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_offline_wandb_integration0/wandb_test/artifact.txt to W&B
+FAILED                                                                   [ 87%]
+granite-test-generator/tests/integration/test_training_telemetry.py::test_training_generates_eval_report 
+-------------------------------- live log call ---------------------------------
+INFO     telemetry.experiment:experiment.py:230 W&B mode=offline
+INFO     telemetry.experiment:experiment.py:242 Initialized W&B run model-dataset-20250929-020526
+INFO     telemetry.experiment:experiment.py:261 TensorBoard writer initialised at test_runs
+WARNING  eval.evaluate:evaluate.py:114 Error computing metrics: Predictions and targets must share the same length: 256 vs 128
+INFO     eval.evaluate:evaluate.py:126 Saved evaluation report to /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_training_generates_eval_r0/baseline/eval/eval_report.json
+INFO     telemetry.experiment:experiment.py:150 Logged artifact /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_training_generates_eval_r0/baseline/eval/eval_report.json to W&B
+FAILED                                                                   [ 88%]
+granite-test-generator/tests/integration/test_training_telemetry.py::test_training_with_telemetry 
+-------------------------------- live log call ---------------------------------
+INFO     telemetry.experiment:experiment.py:230 W&B mode=offline
+INFO     telemetry.experiment:experiment.py:242 Initialized W&B run integration
+INFO     telemetry.experiment:experiment.py:261 TensorBoard writer initialised at /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_training_with_telemetry0/tb
+WARNING  eval.evaluate:evaluate.py:114 Error computing metrics: Predictions and targets must share the same length: 256 vs 128
+INFO     eval.evaluate:evaluate.py:126 Saved evaluation report to /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_training_with_telemetry0/telemetry/eval/eval_report.json
+INFO     telemetry.experiment:experiment.py:150 Logged artifact /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_training_with_telemetry0/telemetry/eval/eval_report.json to W&B
+INFO     telemetry.experiment:experiment.py:150 Logged artifact /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_training_with_telemetry0/telemetry/checkpoints/model.pt to W&B
+PASSED                                                                   [ 89%]
+tests/contract/test_wandb_api_contract.py::TestWandBApiContract::test_get_run_contract PASSED [ 90%]
+tests/contract/test_wandb_api_contract.py::TestWandBApiContract::test_sync_offline_run_contract FAILED [ 91%]
+tests/contract/test_wandb_api_contract.py::TestWandBApiContract::test_update_run_config_contract FAILED [ 92%]
+tests/contract/test_wandb_api_contract.py::TestWandBApiContract::test_export_metrics_contract PASSED [ 93%]
+tests/contract/test_wandb_api_contract.py::TestWandBApiContract::test_artifact_download_contract PASSED [ 94%]
+tests/contract/test_wandb_api_contract.py::TestWandBApiContract::test_get_best_run_from_sweep_contract FAILED [ 95%]
+tests/contract/test_wandb_api_contract.py::TestWandBEnvironmentContract::test_wandb_mode_contract PASSED [ 96%]
+tests/contract/test_wandb_api_contract.py::TestWandBEnvironmentContract::test_wandb_project_contract PASSED [ 97%]
+tests/contract/test_wandb_api_contract.py::TestWandBEnvironmentContract::test_wandb_api_key_contract PASSED [ 98%]
+tests/contract/test_wandb_api_contract.py::TestWandBEnvironmentContract::test_wandb_dir_contract PASSED [ 99%]
+tests/contract/test_wandb_api_contract.py::test_real_wandb_api_access SKIPPED [100%]
+
+=================================== FAILURES ===================================
+_________ TestLoadTelemetryFromSources.test_invalid_log_interval_steps _________
+
+self = <test_telemetry_config.TestLoadTelemetryFromSources object at 0x110f87490>
+
+    def test_invalid_log_interval_steps(self) -> None:
+        """Test handling of invalid log interval steps."""
+        # Test with invalid string
+        cli_args = {"log_interval_steps": "invalid"}
+        config = load_telemetry_from_sources(cli_args=cli_args)
+        assert config.log_interval_steps == 50  # Default value
+    
+        # Test with negative value
+        cli_args = {"log_interval_steps": -10}
+>       config = load_telemetry_from_sources(cli_args=cli_args)
+
+tests/unit/test_telemetry_config.py:232: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/config/telemetry.py:160: in load_telemetry_from_sources
+    return base_cfg.merged_with(**overrides)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TelemetryConfig(enable_wandb=False, wandb_project='telemetry-tests', wandb_entity=None, wandb_run_name=None, wandb_tags=[], enable_tensorboard=False, tb_log_dir='test_runs', log_interval_steps=50)
+overrides = {'log_interval_steps': -10}
+data = {'enable_tensorboard': False, 'enable_wandb': False, 'log_interval_steps': -10, 'tb_log_dir': 'test_runs', ...}
+
+    def merged_with(self, **overrides: Any) -> "TelemetryConfig":
+        data = self.dict()
+        data.update({k: v for k, v in overrides.items() if v is not None})
+>       return TelemetryConfig(**data)
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for TelemetryConfig
+E       log_interval_steps
+E         Input should be greater than or equal to 1 [type=greater_than_equal, input_value=-10, input_type=int]
+E           For further information visit https://errors.pydantic.dev/2.8/v/greater_than_equal
+
+src/config/telemetry.py:95: ValidationError
+------------------------------ Captured log call -------------------------------
+WARNING  src.config.telemetry:telemetry.py:157 Invalid log interval override invalid
+______________ TestEndToEndWorkflow.test_train_eval_log_workflow _______________
+
+self = <test_end_to_end_workflow.TestEndToEndWorkflow object at 0x307523110>
+tmp_path = PosixPath('/private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_train_eval_log_workflow0')
+
+    def test_train_eval_log_workflow(self, tmp_path: Path) -> None:
+        """Test the complete workflow: train, evaluate, and log results."""
+        # Create directories
+        output_dir = tmp_path / "workflow_test"
+        output_dir.mkdir()
+        checkpoints_dir = output_dir / "checkpoints"
+        checkpoints_dir.mkdir()
+        tb_dir = tmp_path / "tensorboard_logs"
+        tb_dir.mkdir()
+    
+        # Create a simple dataset
+        X = torch.randn(100, 10)
+        y = torch.randint(0, 2, (100,))
+        dataset = TensorDataset(X, y)
+        train_loader = DataLoader(dataset[:80], batch_size=16, shuffle=True)
+        val_loader = DataLoader(dataset[80:], batch_size=16)
+    
+        # Create a simple model
+        class SimpleModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.layer = nn.Linear(10, 2)
+    
+            def forward(self, x):
+                return self.layer(x)
+    
+        model = SimpleModel()
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.Adam(model.parameters(), lr=0.01)
+    
+        # Create telemetry configuration
+        config = TelemetryConfig(
+            enable_tensorboard=True,
+            tb_log_dir=str(tb_dir),
+            wandb_tags=["integration-test", "end-to-end"],
+        )
+    
+        # Configure metadata for the run
+        metadata = {
+            "model": {"type": "SimpleModel", "params": 22},  # 10*2 + 2 = 22 params
+            "dataset": {"type": "synthetic", "samples": 100},
+            "training": {"epochs": 2, "batch_size": 16, "optimizer": "Adam"}
+        }
+    
+        # Create experiment logger
+        with ExperimentLogger(config, metadata) as logger:
+            logger.log_params(**metadata)
+    
+            # Run a simple training loop
+            for epoch in range(1, 3):  # 2 epochs
+>               logger.debug(f"Training epoch {epoch}")
+E               AttributeError: 'ExperimentLogger' object has no attribute 'debug'
+
+tests/integration/test_end_to_end_workflow.py:101: AttributeError
+------------------------------ Captured log call -------------------------------
+INFO     src.telemetry.experiment:experiment.py:261 TensorBoard writer initialised at /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_train_eval_log_workflow0/tensorboard_logs
+________________________ test_offline_wandb_integration ________________________
+
+tmp_path = PosixPath('/private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_offline_wandb_integration0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x3100f5e10>
+
+    def test_offline_wandb_integration(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test integration with offline W&B mode."""
+        # Set W&B to offline mode
+        monkeypatch.setenv("WANDB_MODE", "offline")
+        monkeypatch.setenv("WANDB_PROJECT", "integration-test")
+    
+        # Set up directories
+        output_dir = tmp_path / "wandb_test"
+        output_dir.mkdir()
+        artifact_path = output_dir / "artifact.txt"
+        artifact_path.write_text("Test artifact content")
+    
+        # Create config with W&B enabled
+        config = TelemetryConfig(
+            enable_wandb=True,
+            wandb_project="integration-test",
+            wandb_tags=["offline-test"]
+        )
+    
+        # Create experiment logger
+        with ExperimentLogger(config, {"test": "wandb-offline"}) as logger:
+            # Log metrics, parameters, and artifact
+            for step in range(1, 6):
+                logger.log_metrics(
+                    step,
+                    metric1=step * 0.1,
+                    metric2=1.0 - step * 0.1
+                )
+    
+            logger.log_params(
+                test_param="value",
+                numeric_param=123
+            )
+    
+            logger.log_artifact(artifact_path, name="test-artifact")
+            logger.set_summary(final_metric=0.5)
+    
+        # Check if offline run was created in wandb directory
+        wandb_dir = Path("wandb")
+        if wandb_dir.exists():
+            offline_runs = list(wandb_dir.glob("offline-run-*"))
+>           logger.info(f"Found offline W&B runs: {offline_runs}")
+E           AttributeError: 'ExperimentLogger' object has no attribute 'info'
+
+tests/integration/test_end_to_end_workflow.py:296: AttributeError
+----------------------------- Captured stderr call -----------------------------
+wandb: WARNING Changes to your `wandb` environment variables will be ignored because your `wandb` session has already started. For more information on how to modify your settings with `wandb.init()` arguments, please refer to https://wandb.me/wandb-init.
+wandb: Tracking run with wandb version 0.21.4
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/offline-run-20250928_220527-imcpzgg9
+wandb: 
+wandb: Run history:
+wandb: metric1 ▁▃▅▆█
+wandb: metric2 █▆▅▃▁
+wandb:    step ▁▃▅▆█
+wandb: 
+wandb: Run summary:
+wandb: final_metric 0.5
+wandb:      metric1 0.5
+wandb:      metric2 0.5
+wandb:         step 5
+wandb: 
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/offline-run-20250928_220527-imcpzgg9
+wandb: Find logs at: ./wandb/offline-run-20250928_220527-imcpzgg9/logs
+------------------------------ Captured log call -------------------------------
+INFO     src.telemetry.experiment:experiment.py:230 W&B mode=offline
+INFO     src.telemetry.experiment:experiment.py:242 Initialized W&B run model-dataset-20250929-020527
+INFO     src.telemetry.experiment:experiment.py:150 Logged artifact /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_offline_wandb_integration0/wandb_test/artifact.txt to W&B
+_____________________ test_training_generates_eval_report ______________________
+
+tmp_path = PosixPath('/private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_training_generates_eval_r0')
+
+    def test_training_generates_eval_report(tmp_path):
+        out_dir = tmp_path / "baseline"
+        run_training([
+            "--output-dir", str(out_dir),
+            "--task-type", "classification",
+            "--epochs", "1",
+            "--batch-size", "4",
+        ])
+        report_path = out_dir / "eval" / "eval_report.json"
+        assert report_path.exists()
+        data = report_path.read_text()
+>       assert "accuracy" in data
+E       assert 'accuracy' in '{\n  "error": 1.0\n}'
+
+granite-test-generator/tests/integration/test_training_telemetry.py:93: AssertionError
+----------------------------- Captured stderr call -----------------------------
+wandb: WARNING Changes to your `wandb` environment variables will be ignored because your `wandb` session has already started. For more information on how to modify your settings with `wandb.init()` arguments, please refer to https://wandb.me/wandb-init.
+wandb: Tracking run with wandb version 0.21.4
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/offline-run-20250928_220527-21fot8cu
+wandb: 
+wandb: Run history:
+wandb: accuracy ▁
+wandb:    epoch ▁
+wandb:    error ▁
+wandb:     loss ▁
+wandb:     step █▁
+wandb: 
+wandb: Run summary:
+wandb:         accuracy 0.69531
+wandb:      best_metric 0
+wandb: best_metric_name accuracy
+wandb:            epoch 1
+wandb:           epochs 1
+wandb:            error 1
+wandb:             loss 0.60061
+wandb:             step 1
+wandb:      total_steps 32
+wandb: 
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/offline-run-20250928_220527-21fot8cu
+wandb: Find logs at: ./wandb/offline-run-20250928_220527-21fot8cu/logs
+------------------------------ Captured log call -------------------------------
+INFO     telemetry.experiment:experiment.py:230 W&B mode=offline
+INFO     telemetry.experiment:experiment.py:242 Initialized W&B run model-dataset-20250929-020526
+INFO     telemetry.experiment:experiment.py:261 TensorBoard writer initialised at test_runs
+WARNING  eval.evaluate:evaluate.py:114 Error computing metrics: Predictions and targets must share the same length: 256 vs 128
+INFO     eval.evaluate:evaluate.py:126 Saved evaluation report to /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_training_generates_eval_r0/baseline/eval/eval_report.json
+INFO     telemetry.experiment:experiment.py:150 Logged artifact /private/var/folders/1p/8_mzk6q95bv1w31pwcdlxwv80000gn/T/pytest-of-iancruickshank/pytest-130/test_training_generates_eval_r0/baseline/eval/eval_report.json to W&B
+_____________ TestWandBApiContract.test_sync_offline_run_contract ______________
+
+self = <test_wandb_api_contract.TestWandBApiContract object at 0x30aa6e350>
+
+    def test_sync_offline_run_contract(self) -> None:
+        """Test contract for syncing an offline run."""
+        # Set up offline run dir with expected structure
+        mock_sync = mock.MagicMock()
+    
+>       with mock.patch("wandb.sync", mock_sync):
+
+tests/contract/test_wandb_api_contract.py:153: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/anaconda3/lib/python3.13/unittest/mock.py:1497: in __enter__
+    original, local = self.get_original()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <unittest.mock._patch object at 0x30d675390>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <module 'wandb' from '/opt/anaconda3/lib/python3.13/site-packages/wandb/__init__.py'> does not have the attribute 'sync'
+
+/opt/anaconda3/lib/python3.13/unittest/mock.py:1467: AttributeError
+_____________ TestWandBApiContract.test_update_run_config_contract _____________
+
+self = <test_wandb_api_contract.TestWandBApiContract object at 0x307833bb0>
+
+    def test_update_run_config_contract(self) -> None:
+        """Test contract for updating run configuration."""
+        # Configure mock run to have update method
+        updates = {"param1": "new-value", "param2": 42}
+    
+        self.client.update_run_config("test-project/test-run-id", updates)
+    
+        # Verify the config.update was called with the right parameters
+        # and allow_val_change=True
+>       self.mock_run.config.update.assert_called_once_with(updates, allow_val_change=True)
+E       AttributeError: 'builtin_function_or_method' object has no attribute 'assert_called_once_with'
+
+tests/contract/test_wandb_api_contract.py:172: AttributeError
+__________ TestWandBApiContract.test_get_best_run_from_sweep_contract __________
+
+self = <test_wandb_api_contract.TestWandBApiContract object at 0x30aa63020>
+
+    def test_get_best_run_from_sweep_contract(self) -> None:
+        """Test contract for finding best run in a sweep."""
+        # Configure mock sweep with runs
+        mock_sweep = mock.MagicMock()
+    
+        # Create a list of mock runs with different metrics
+        mock_runs = []
+        for i in range(3):
+            mock_run = mock.MagicMock()
+            mock_run.name = f"run-{i}"
+            mock_run.summary = {"val_accuracy": 0.7 + i * 0.1}  # 0.7, 0.8, 0.9
+            mock_runs.append(mock_run)
+    
+        # Sort runs in reverse order to test sorting logic
+        mock_sweep.runs = list(reversed(mock_runs))
+        self.mock_api.return_value.sweep.return_value = mock_sweep
+    
+        # Call the function under test
+        best_run = self.client.get_best_run_from_sweep("test-project/sweep-id", "val_accuracy", maximize=True)
+    
+        # Verify sweep was called with the right path
+        self.mock_api.return_value.sweep.assert_called_once_with("test-entity/test-project/sweep-id")
+    
+        # Check that we got the run with the highest val_accuracy
+        assert best_run.name == "run-2"
+>       assert best_run.summary["val_accuracy"] == 0.9
+E       assert 0.8999999999999999 == 0.9
+
+tests/contract/test_wandb_api_contract.py:226: AssertionError
+=============================== warnings summary ===============================
+src/config/telemetry.py:82
+  /Users/iancruickshank/GraniteMOE1B_SQE_Agent/src/config/telemetry.py:82: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.8/migration/
+    @validator("tb_log_dir")
+
+src/config/telemetry.py:88
+  /Users/iancruickshank/GraniteMOE1B_SQE_Agent/src/config/telemetry.py:88: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.8/migration/
+    @validator("wandb_tags", pre=True)
+
+granite-test-generator/src/config/telemetry.py:82
+  /Users/iancruickshank/GraniteMOE1B_SQE_Agent/granite-test-generator/src/config/telemetry.py:82: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.8/migration/
+    @validator("tb_log_dir")
+
+granite-test-generator/src/config/telemetry.py:88
+  /Users/iancruickshank/GraniteMOE1B_SQE_Agent/granite-test-generator/src/config/telemetry.py:88: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.8/migration/
+    @validator("wandb_tags", pre=True)
+
+tests/unit/test_telemetry_config.py: 12 warnings
+tests/integration/test_end_to_end_workflow.py: 1 warning
+granite-test-generator/tests/integration/test_training_telemetry.py: 2 warnings
+  /opt/anaconda3/lib/python3.13/site-packages/pydantic/main.py:1087: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.8/migration/
+    warnings.warn('The `dict` method is deprecated; use `model_dump` instead.', category=PydanticDeprecatedSince20)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/unit/test_telemetry_config.py::TestLoadTelemetryFromSources::test_invalid_log_interval_steps
+FAILED tests/integration/test_end_to_end_workflow.py::TestEndToEndWorkflow::test_train_eval_log_workflow
+FAILED tests/integration/test_end_to_end_workflow.py::test_offline_wandb_integration
+FAILED granite-test-generator/tests/integration/test_training_telemetry.py::test_training_generates_eval_report
+FAILED tests/contract/test_wandb_api_contract.py::TestWandBApiContract::test_sync_offline_run_contract
+FAILED tests/contract/test_wandb_api_contract.py::TestWandBApiContract::test_update_run_config_contract
+FAILED tests/contract/test_wandb_api_contract.py::TestWandBApiContract::test_get_best_run_from_sweep_contract
+============= 7 failed, 94 passed, 1 skipped, 19 warnings in 4.34s =============

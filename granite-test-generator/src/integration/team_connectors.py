@@ -408,9 +408,24 @@ class LocalFileSystemConnector(TeamConnector):
         Raises:
             FileNotFoundError: If the input directory does not exist
         """
+        logger.info(f"Starting file discovery in directory: {self.input_directory}")
+        logger.debug(f"Searching for file types: {self.file_types}")
+        logger.debug(f"Directory exists: {self.input_directory.exists()}")
+        
         if not self.input_directory.exists():
             logger.warning(f"Input directory does not exist: {self.input_directory}")
             return []
+        
+        # Log directory contents for debugging
+        try:
+            all_files = list(self.input_directory.rglob("*"))
+            logger.debug(f"Total files/directories found recursively: {len(all_files)}")
+            for item in all_files[:10]:  # Log first 10 items to avoid spam
+                logger.debug(f"  Found: {item} (is_file: {item.is_file()})")
+            if len(all_files) > 10:
+                logger.debug(f"  ... and {len(all_files) - 10} more items")
+        except Exception as e:
+            logger.warning(f"Could not list directory contents: {e}")
             
         requirements = []
         file_count = 0
@@ -418,8 +433,14 @@ class LocalFileSystemConnector(TeamConnector):
         
         # Process individual files with specified extensions
         for file_type in self.file_types:
-            for file_path in self.input_directory.glob(f"**/*{file_type}"):
+            logger.debug(f"Searching for files with extension: {file_type}")
+            glob_pattern = f"**/*{file_type}"
+            matching_files = list(self.input_directory.glob(glob_pattern))
+            logger.debug(f"Found {len(matching_files)} files matching pattern '{glob_pattern}'")
+            
+            for file_path in matching_files:
                 file_count += 1
+                logger.debug(f"Processing file: {file_path}")
                 try:
                     # Skip directories and hidden files
                     if file_path.is_dir() or file_path.name.startswith('.'):

@@ -1,0 +1,22 @@
+2025-09-28 22:05:27,904 INFO    MainThread:97342 [wandb_init.py:setup_run_log_directory():686] Logging user logs to /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/offline-run-20250928_220527-21fot8cu/logs/debug.log
+2025-09-28 22:05:27,904 INFO    MainThread:97342 [wandb_init.py:setup_run_log_directory():687] Logging internal logs to /Users/iancruickshank/GraniteMOE1B_SQE_Agent/wandb/offline-run-20250928_220527-21fot8cu/logs/debug-internal.log
+2025-09-28 22:05:27,905 INFO    MainThread:97342 [wandb_init.py:init():813] calling init triggers
+2025-09-28 22:05:27,905 INFO    MainThread:97342 [wandb_init.py:init():818] wandb.init called with sweep_config: {}
+config: {'model': {'type': 'moe', 'repo_id': 'ibm-granite/granite-3-moe-instruct', 'pretrained_weights': './artifacts/moe_checkpoints/checkpoint-latest.pt', 'save_dir': './artifacts/moe_checkpoints/', 'tokenizer_name': 'ibm-granite/granite-3-moe-instruct', 'tokenizer_kwargs': {'truncation': True, 'padding': 'max_length', 'max_length': 1024}}, 'training': {'epochs': 1, 'batch_size': 4, 'learning_rate': 0.001, 'task_type': 'classification'}, 'data': {'train_file': './data/testcases/train.jsonl', 'val_file': './data/testcases/val.jsonl', 'test_file': './data/testcases/test.jsonl', 'input_format': 'jsonl', 'requirements_rag': './data/stories/requirements.jsonl', 'user_stories_dir': './data/stories/', 'batch_size': 8, 'num_workers': 4}, 'runtime': {'device': 'cpu'}, '_wandb': {}}
+2025-09-28 22:05:27,905 INFO    MainThread:97342 [wandb_init.py:init():854] starting backend
+2025-09-28 22:05:27,905 INFO    MainThread:97342 [wandb_init.py:init():857] sending inform_init request
+2025-09-28 22:05:27,905 INFO    MainThread:97342 [wandb_init.py:init():865] backend started and connected
+2025-09-28 22:05:27,908 INFO    MainThread:97342 [wandb_init.py:init():936] updated telemetry
+2025-09-28 22:05:27,920 INFO    MainThread:97342 [wandb_init.py:init():960] communicating run to backend with 90.0 second timeout
+2025-09-28 22:05:28,023 INFO    MainThread:97342 [wandb_init.py:init():1011] starting run threads in backend
+2025-09-28 22:05:28,181 INFO    MainThread:97342 [wandb_run.py:_console_start():2506] atexit reg
+2025-09-28 22:05:28,181 INFO    MainThread:97342 [wandb_run.py:_redirect():2354] redirect: wrap_raw
+2025-09-28 22:05:28,181 INFO    MainThread:97342 [wandb_run.py:_redirect():2423] Wrapping output streams.
+2025-09-28 22:05:28,181 INFO    MainThread:97342 [wandb_run.py:_redirect():2446] Redirects installed.
+2025-09-28 22:05:28,181 INFO    MainThread:97342 [wandb_init.py:init():1049] run started, returning control to user process
+2025-09-28 22:05:28,182 INFO    MainThread:97342 [wandb_run.py:_config_callback():1392] config_cb None None {'git_sha': '7ce14ef3ecaef9e6c9353db78b1bafb02bf8364a'}
+2025-09-28 22:05:28,182 INFO    MainThread:97342 [wandb_run.py:_config_callback():1392] config_cb None None {'model': {'type': 'moe', 'repo_id': 'ibm-granite/granite-3-moe-instruct', 'pretrained_weights': './artifacts/moe_checkpoints/checkpoint-latest.pt', 'save_dir': './artifacts/moe_checkpoints/', 'tokenizer_name': 'ibm-granite/granite-3-moe-instruct', 'tokenizer_kwargs': {'truncation': True, 'padding': 'max_length', 'max_length': 1024}}, 'training': {'epochs': 1, 'batch_size': 4, 'learning_rate': 0.001, 'task_type': 'classification'}, 'data': {'train_file': './data/testcases/train.jsonl', 'val_file': './data/testcases/val.jsonl', 'test_file': './data/testcases/test.jsonl', 'input_format': 'jsonl', 'requirements_rag': './data/stories/requirements.jsonl', 'user_stories_dir': './data/stories/', 'batch_size': 8, 'num_workers': 4}, 'runtime': {'device': 'cpu'}}
+2025-09-28 22:05:28,225 INFO    MainThread:97342 [wandb_run.py:_finish():2272] finishing run cli-entity/telemetry-tests/21fot8cu
+2025-09-28 22:05:28,225 INFO    MainThread:97342 [wandb_run.py:_atexit_cleanup():2471] got exitcode: 0
+2025-09-28 22:05:28,226 INFO    MainThread:97342 [wandb_run.py:_restore():2453] restore
+2025-09-28 22:05:28,226 INFO    MainThread:97342 [wandb_run.py:_restore():2459] restore done

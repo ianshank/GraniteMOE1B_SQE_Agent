@@ -35,6 +35,13 @@ def main() -> None:
     logger.debug(f"Working directory: {os.getcwd()}")
     
     try:
+        # Resolve integration config path to an absolute path before changing directory
+        integ_path = os.getenv("INTEGRATION_CONFIG_PATH")
+        if integ_path and not Path(integ_path).is_absolute():
+            abs_integ_path = str(Path(integ_path).resolve())
+            os.environ["INTEGRATION_CONFIG_PATH"] = abs_integ_path
+            logger.info(f"Resolved relative INTEGRATION_CONFIG_PATH to absolute path: {abs_integ_path}")
+            
         # Determine granite-test-generator directory for proper path resolution
         project_root_override = os.getenv("GRANITE_PROJECT_ROOT")
         if project_root_override:
