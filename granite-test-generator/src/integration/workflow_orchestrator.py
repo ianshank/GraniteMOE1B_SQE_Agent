@@ -6,6 +6,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Default feature flags for auto-generated teams. These constants avoid scattering
+# literal booleans across the codebase and allow central tuning or config overrides.
+DEFAULT_RAG_ENABLED: bool = True
+DEFAULT_CAG_ENABLED: bool = True
+DEFAULT_AUTO_PUSH: bool = False
+
 if TYPE_CHECKING:
     from src.integration.team_connectors import TeamConnector, JiraConnector, GitHubConnector, LocalFileSystemConnector
     from src.agents.generation_agent import TestGenerationAgent
@@ -208,9 +214,9 @@ class WorkflowOrchestrator:
                         input_directory=str(default_requirements_dir),
                         output_directory="output"
                     ),
-                    rag_enabled=True,
-                    cag_enabled=True,
-                    auto_push=False
+                    rag_enabled=DEFAULT_RAG_ENABLED,
+                    cag_enabled=DEFAULT_CAG_ENABLED,
+                    auto_push=DEFAULT_AUTO_PUSH
                 )
                 
                 # Register the default team

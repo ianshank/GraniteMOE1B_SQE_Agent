@@ -16,17 +16,43 @@ from typing import Dict, List, Optional, Union
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# Add the src directory to the Python path
-sys.path.insert(0, str(Path(__file__).parent / "granite-test-generator"))
-
-# Import after path setup
+# Robust imports without hardcoded path assumptions
+# 1) Try importing directly (when PYTHONPATH is set appropriately)
+# 2) If that fails, attempt to discover likely local paths and retry
+# 3) If still unavailable, continue in minimal mode with guidance
 try:
     from src.config import load_telemetry_from_sources
     from src.eval.evaluate import evaluate
 except ImportError:
-    logger.warning("Telemetry modules not available. Running in minimal mode.")
-    load_telemetry_from_sources = None
-    evaluate = None
+    # Attempt local discovery paths
+    project_dir = Path(__file__).resolve().parent
+    candidates = [
+        project_dir / "granite-test-generator" / "src",
+        project_dir / "granite-test-generator",
+    ]
+
+    added_any = False
+    for candidate in candidates:
+        if candidate.exists():
+            path_str = str(candidate)
+            if path_str not in sys.path:
+                sys.path.insert(0, path_str)
+                added_any = True
+
+    try:
+        from src.config import load_telemetry_from_sources  # type: ignore
+        from src.eval.evaluate import evaluate  # type: ignore
+        if added_any:
+            logger.debug("Loaded telemetry modules after augmenting sys.path.")
+    except ImportError:
+        logger.warning(
+            "Telemetry modules not available. Running in minimal mode.\n"
+            "To enable telemetry/evaluation imports, either set PYTHONPATH to include\n"
+            "granite-test-generator/src or install the package in editable mode:\n"
+            "    pip install -e granite-test-generator/src"
+        )
+        load_telemetry_from_sources = None  # type: ignore
+        evaluate = None  # type: ignore
 
 
 def run_training(args_list: Optional[List[str]] = None) -> Dict[str, Union[float, str]]:

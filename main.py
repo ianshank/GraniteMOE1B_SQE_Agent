@@ -62,7 +62,7 @@ def main() -> None:
         
         # Parse command line arguments
         import argparse
-        import sys
+.        import sys
         parser = argparse.ArgumentParser(description="Granite Test Case Generator")
         parser.add_argument("--config", type=str, default="config/model_config.yaml", help="Path to configuration file")
         parser.add_argument("--multiple-suites", action="store_true", help="Generate multiple test suites (functional, regression, E2E)")
