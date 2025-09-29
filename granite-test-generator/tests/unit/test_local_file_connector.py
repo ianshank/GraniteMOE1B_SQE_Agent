@@ -181,7 +181,9 @@ def test_connector_initialization(temp_input_dir, temp_output_dir):
     
     assert connector.input_directory == temp_input_dir
     assert connector.team_name == "test_team"
-    assert connector.output_directory == Path("output/test_team")
+    # With absolute path resolution, output directory should be under project root
+    expected_path = Path("/Users/iancruickshank/GraniteMOE1B_SQE_Agent/output/test_team")
+    assert connector.output_directory == expected_path
     assert connector.file_types == [".md", ".txt", ".json"]
 
 def test_extract_title():

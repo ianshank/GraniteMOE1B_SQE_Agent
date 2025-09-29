@@ -3,6 +3,8 @@ Constants and default values for the Granite Test Generator.
 Centralized location for hardcoded values to improve maintainability.
 """
 
+import os
+from pathlib import Path
 from typing import List, Dict
 
 # Model Defaults
@@ -28,14 +30,22 @@ DEFAULT_HTTP_TIMEOUT = 30
 DEFAULT_API_TIMEOUT = 30
 
 # File System Defaults
-DEFAULT_OUTPUT_DIR = "output"
-DEFAULT_MODELS_DIR = "./models/fine_tuned_granite"
-DEFAULT_CACHE_DIR = "cache"
-DEFAULT_LOGS_DIR = "logs"
-DEFAULT_DATA_DIR = "data"
-DEFAULT_REQUIREMENTS_DIR = "data/requirements"
-DEFAULT_TRAINING_DIR = "data/training"
-DEFAULT_USER_STORIES_DIR = "data/user_stories"
+# Get the project root directory (4 levels up from this file)
+_CURRENT_FILE = Path(__file__).resolve()
+_MODULE_DIR = _CURRENT_FILE.parent  # utils directory
+_SRC_DIR = _MODULE_DIR.parent       # src directory
+_GRANITE_DIR = _SRC_DIR.parent      # granite-test-generator directory
+_PROJECT_ROOT = _GRANITE_DIR.parent # project root directory
+
+# Use absolute paths for output to ensure consistency regardless of working directory
+DEFAULT_OUTPUT_DIR = str(_PROJECT_ROOT / "output")
+DEFAULT_MODELS_DIR = str(_GRANITE_DIR / "models/fine_tuned_granite")
+DEFAULT_CACHE_DIR = str(_GRANITE_DIR / "cache")
+DEFAULT_LOGS_DIR = str(_GRANITE_DIR / "logs")
+DEFAULT_DATA_DIR = str(_GRANITE_DIR / "data")
+DEFAULT_REQUIREMENTS_DIR = str(_GRANITE_DIR / "data/requirements")
+DEFAULT_TRAINING_DIR = str(_GRANITE_DIR / "data/training")
+DEFAULT_USER_STORIES_DIR = str(_GRANITE_DIR / "data/user_stories")
 
 # File Extensions
 SUPPORTED_FILE_EXTENSIONS = [".md", ".txt", ".json", ".yaml", ".yml"]
