@@ -123,7 +123,7 @@ class TestGenerationAgent:
 
         # If MLX not available, try transformers model
         if not getattr(self.granite_model, 'mlx_model', None):
-            return self._generate_with_transformers(requirement, prompt)
+            return self._generate_with_transformers(requirement)
 
         # If no models available, only allow template generation when explicitly enabled
         if not getattr(self.granite_model, 'mlx_model', None) and not getattr(self.granite_model, 'model', None):

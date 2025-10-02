@@ -187,7 +187,7 @@ class OpenAIClient:
         tail_tokens = min(len(tokens), max(0, base_budget // 3))
         head_tokens = max(0, base_budget - tail_tokens)
 
-        truncated_sequence: List[Union[int, str]] = []
+        truncated_sequence = []
         if head_tokens:
             truncated_sequence.extend(tokens[:head_tokens])
         truncated_sequence.extend(filler_tokens)
@@ -259,9 +259,14 @@ class OpenAIClient:
         elif isinstance(override, int) and override > 0:
             return override
 
-        for known_model, window in _MODEL_CONTEXT_WINDOWS.items():
-            if model_name and known_model in model_name:
-                return window
+        if model_name:
+            # First, try exact match
+            if model_name in _MODEL_CONTEXT_WINDOWS:
+                return _MODEL_CONTEXT_WINDOWS[model_name]
+            # Optionally, try safe prefix match (e.g., "gpt-4.1" should match "gpt-4.1-xxx")
+            for known_model, window in _MODEL_CONTEXT_WINDOWS.items():
+                if model_name.startswith(known_model + "-") or model_name.startswith(known_model + "."):
+                    return window
 
         return DEFAULT_CONTEXT_TOKEN_LIMIT
 
