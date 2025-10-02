@@ -163,25 +163,46 @@ class OpenAIClient:
         )
 
         if allowed_input_tokens <= 0:
-            truncated_tokens = tokens[: self.max_context_tokens]
+            # Always reserve at least 1 token for completion
+            reserved_completion_tokens = 1
+            truncated_tokens = tokens[: max(0, self.max_context_tokens - reserved_completion_tokens)]
             truncated_prompt = self._decode_tokens(truncated_tokens, encoding)
             logger.warning(
                 "OpenAI prompt truncated to %s tokens leaving minimal room for completion; consider reducing prompt size",
                 len(truncated_tokens),
             )
-            return truncated_prompt, max(1, self.max_context_tokens - len(truncated_tokens))
+            return truncated_prompt, reserved_completion_tokens
 
         filler_tokens, _ = self._encode_text(_TRUNCATION_NOTICE, model, encoding)
         filler_len = len(filler_tokens)
 
         if allowed_input_tokens <= filler_len + 1:
-            truncated_tokens = tokens[-allowed_input_tokens:]
-            truncated_prompt = self._decode_tokens(truncated_tokens, encoding)
-            logger.warning(
-                "Prompt severely truncated to last %s tokens to satisfy context window.",
-                len(truncated_tokens),
-            )
-            return truncated_prompt, max(1, self.max_context_tokens - len(truncated_tokens))
+            # Balanced truncation: take as much as possible from head and tail, with truncation notice in the middle if possible
+            if allowed_input_tokens <= 2:
+                # Not enough room for notice or both head/tail, just take the first allowed token(s)
+                truncated_tokens = tokens[:allowed_input_tokens]
+                truncated_prompt = self._decode_tokens(truncated_tokens, encoding)
+                logger.warning(
+                    "Prompt severely truncated to first %s tokens to satisfy context window.",
+                    len(truncated_tokens),
+                )
+                return truncated_prompt, max(1, self.max_context_tokens - len(truncated_tokens))
+            else:
+                # Try to split between head and tail, with notice in the middle if possible
+                head_tokens = max(1, (allowed_input_tokens - filler_len) // 2)
+                tail_tokens = allowed_input_tokens - filler_len - head_tokens
+                truncated_sequence = []
+                if head_tokens > 0:
+                    truncated_sequence.extend(tokens[:head_tokens])
+                truncated_sequence.extend(filler_tokens)
+                if tail_tokens > 0:
+                    truncated_sequence.extend(tokens[-tail_tokens:])
+                truncated_prompt = self._decode_tokens(truncated_sequence, encoding)
+                logger.warning(
+                    "Prompt severely truncated to %s head tokens, truncation notice, and %s tail tokens to satisfy context window.",
+                    head_tokens, tail_tokens
+                )
+                return truncated_prompt, max(1, self.max_context_tokens - len(truncated_sequence))
 
         base_budget = allowed_input_tokens - filler_len
         tail_tokens = min(len(tokens), max(0, base_budget // 3))
