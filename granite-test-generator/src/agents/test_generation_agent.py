@@ -19,6 +19,7 @@ from typing import List, Dict, Any, Optional
 import asyncio
 from typing import TYPE_CHECKING
 from src.utils.constants import TEMPLATE_PATTERNS
+from src.integration.openai_client import OpenAIClient, OpenAIIntegrationError
 from src.models.test_case_schemas import (
     TestCase,
     TestStep,
@@ -55,6 +56,18 @@ class TestGenerationAgent:
         self._logger = logging.getLogger(__name__)
         # Disallow template/dummy generation unless explicitly enabled
         self._allow_template_generation = str(os.getenv("ALLOW_TEMPLATE_GENERATION", "false")).lower() in ("1", "true", "yes")
+
+        self._openai_client: Optional[OpenAIClient] = None
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if openai_key:
+            try:
+                self._openai_client = OpenAIClient(api_key=openai_key)
+                self._logger.info(
+                    "OpenAI integration enabled for remote test case generation using model %s",
+                    self._openai_client.default_model,
+                )
+            except OpenAIIntegrationError as exc:
+                self._logger.warning("OpenAI integration disabled: %s", exc)
         
     def _initialize_tools(self) -> List[Tool]:
         """Initialize tools for the agent"""
@@ -96,14 +109,22 @@ class TestGenerationAgent:
     
     def _generate_test_case(self, requirement: str) -> str:
         """Generate test case using MLX model, transformers model, or fallback templating."""
+        prompt = self._build_generation_prompt(requirement)
+
+        if self._openai_client:
+            try:
+                return self._generate_with_openai(prompt)
+            except OpenAIIntegrationError as exc:
+                self._logger.warning("OpenAI generation failed, falling back to local models: %s", exc)
+
         # Try MLX first (optimal for Apple Silicon)
         if not getattr(self.granite_model, 'mlx_model', None) or not getattr(self.granite_model, 'mlx_tokenizer', None):
             self.granite_model.load_model_for_inference()
-        
+
         # If MLX not available, try transformers model
         if not getattr(self.granite_model, 'mlx_model', None):
             return self._generate_with_transformers(requirement)
-        
+
         # If no models available, only allow template generation when explicitly enabled
         if not getattr(self.granite_model, 'mlx_model', None) and not getattr(self.granite_model, 'model', None):
             if not getattr(self, '_allow_template_generation', False):
@@ -111,25 +132,6 @@ class TestGenerationAgent:
                     "No generation backend available (MLX/Transformers) and template generation is disabled."
                 )
             return self._template_generate(requirement)
-
-        prompt = f"""<|system|>
-You are an expert software quality engineer. Create a comprehensive, detailed test case that thoroughly validates the system against the given requirement. Include specific validation steps, edge cases, error conditions, and acceptance criteria verification.
-
-<|user|>
-Requirement: {requirement}
-
-Create a detailed test case that includes:
-1. A clear, specific summary describing what is being tested
-2. Comprehensive test steps with detailed actions and specific validation points
-3. Expected results that validate all acceptance criteria
-4. Input data requirements and test data specifications
-5. Verification of security, performance, and functional requirements
-6. Edge cases and error condition testing
-7. Specific assertions and validation checks
-
-Format your response with [TEST_CASE][SUMMARY]...[/SUMMARY][INPUT_DATA]...[/INPUT_DATA][STEPS]...[/STEPS][EXPECTED]...[/EXPECTED][/TEST_CASE]
-
-<|assistant|>"""
 
         try:
             response = generate(
@@ -152,24 +154,11 @@ Format your response with [TEST_CASE][SUMMARY]...[/SUMMARY][INPUT_DATA]...[/INPU
         except Exception:
             # Final fallback
             return self._template_generate(requirement)
-    
-    def _generate_with_transformers(self, requirement: str) -> str:
-        """Generate test case using transformers library when MLX is not available."""
-        
-        try:
-            # Load transformers model if not already loaded
-            if not getattr(self.granite_model, 'model', None):
-                self._logger.info("Loading transformers model for test case generation")
-                self.granite_model.load_model_for_training()
-            
-            if not getattr(self.granite_model, 'model', None):
-                if not getattr(self, '_allow_template_generation', False):
-                    raise RuntimeError("Transformers backend missing and template generation disabled")
-                self._logger.warning("Transformers model not available, falling back to template generation")
-                return self._template_generate(requirement)
-            
-            # Create enhanced prompt for transformers
-            prompt = f"""<|system|>
+
+    def _build_generation_prompt(self, requirement: str) -> str:
+        """Construct a detailed prompt for any generation backend."""
+
+        return f"""<|system|>
 You are an expert software quality engineer. Create a comprehensive, detailed test case that thoroughly validates the system against the given requirement. Include specific validation steps, edge cases, error conditions, and acceptance criteria verification.
 
 <|user|>
@@ -187,6 +176,36 @@ Create a detailed test case that includes:
 Format your response with [TEST_CASE][SUMMARY]...[/SUMMARY][INPUT_DATA]...[/INPUT_DATA][STEPS]...[/STEPS][EXPECTED]...[/EXPECTED][/TEST_CASE]
 
 <|assistant|>"""
+
+    def _generate_with_openai(self, prompt: str) -> str:
+        """Generate a test case via the OpenAI integration."""
+
+        if not self._openai_client:
+            raise OpenAIIntegrationError("OpenAI client not initialized")
+
+        return self._openai_client.generate_response(
+            prompt,
+            temperature=0.55,
+            max_output_tokens=900,
+        )
+
+    def _generate_with_transformers(self, requirement: str, prompt: Optional[str] = None) -> str:
+        """Generate test case using transformers library when MLX is not available."""
+
+        try:
+            # Load transformers model if not already loaded
+            if not getattr(self.granite_model, 'model', None):
+                self._logger.info("Loading transformers model for test case generation")
+                self.granite_model.load_model_for_training()
+
+            if not getattr(self.granite_model, 'model', None):
+                if not getattr(self, '_allow_template_generation', False):
+                    raise RuntimeError("Transformers backend missing and template generation disabled")
+                self._logger.warning("Transformers model not available, falling back to template generation")
+                return self._template_generate(requirement)
+
+            # Create enhanced prompt for transformers
+            prompt = prompt or self._build_generation_prompt(requirement)
 
             # Tokenize and generate
             inputs = self.granite_model.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
