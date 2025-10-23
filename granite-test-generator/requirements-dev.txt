@@ -39,3 +39,4 @@ line-profiler==4.1.2
 # Security scanning
 bandit==1.7.6
 safety==3.0.1
+authlib>=1.6.5 # not directly required, pinned by Snyk to avoid a vulnerability
