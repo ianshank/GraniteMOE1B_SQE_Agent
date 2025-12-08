@@ -196,3 +196,4 @@ tensorboard>=2.16
 wandb>=0.17
 evaluate>=0.4.2
 torchmetrics>=1.4
+urllib3>=2.6.0 # not directly required, pinned by Snyk to avoid a vulnerability
